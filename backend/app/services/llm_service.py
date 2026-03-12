@@ -18,11 +18,11 @@ async def get_thread_messages(db: aiosqlite.Connection, thread_id: str) -> list[
 
 async def stream_chat_completion(messages: list[dict]) -> AsyncGenerator[str, None]:
     """Stream chat completion deltas from the LLM."""
-    response = openai_client.chat.completions.create(
+    response = await openai_client.chat.completions.create(
         model=settings.llm_model,
         messages=messages,
         stream=True,
     )
-    for chunk in response:
+    async for chunk in response:
         if chunk.choices and chunk.choices[0].delta.content:
             yield chunk.choices[0].delta.content
