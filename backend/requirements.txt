@@ -1,0 +1,11 @@
+fastapi[standard]
+uvicorn[standard]
+openai
+langsmith
+pydantic[email]
+pydantic-settings
+python-dotenv
+sse-starlette
+pyjwt
+bcrypt
+aiosqlite

@@ -10,6 +10,7 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 - Observability: LangSmith
 
 ## Rules
+- NEVER hardcode secrets, API keys, passwords, URLs, or personal info in code — all sensitive values go in `.env` (gitignored) and are referenced via env vars
 - Python backend must use a `venv` virtual environment
 - No LangChain, no LangGraph - raw SDK calls only
 - Use Pydantic for structured LLM outputs
