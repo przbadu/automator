@@ -12,10 +12,10 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model: str = "gpt-4.1"
 
-    # LangSmith
-    langsmith_tracing: bool = True
-    langsmith_api_key: str = ""
-    langsmith_project: str = "automator-rag"
+    # Langfuse
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_host: str = "http://localhost:3000"
 
     # JWT
     jwt_secret: str = ""

@@ -1,7 +1,7 @@
 fastapi[standard]
 uvicorn[standard]
 openai
-langsmith
+langfuse
 pydantic[email]
 pydantic-settings
 python-dotenv

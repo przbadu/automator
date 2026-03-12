@@ -4,7 +4,7 @@ from collections.abc import AsyncGenerator
 import aiosqlite
 
 from app.config import settings
-from app.services.langsmith_service import openai_client
+from app.services.langfuse_service import openai_client
 
 
 async def get_thread_messages(db: aiosqlite.Connection, thread_id: str) -> list[dict]:

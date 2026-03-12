@@ -7,7 +7,7 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 - Backend: Python + FastAPI
 - Database: Supabase (Postgres, pgvector, Auth, Storage, Realtime)
 - LLM: OpenAI (Module 1), OpenRouter (Module 2+)
-- Observability: LangSmith
+- Observability: Langfuse (self-hosted at http://192.168.1.152:3000)
 
 ## Rules
 - NEVER hardcode secrets, API keys, passwords, URLs, or personal info in code — all sensitive values go in `.env` (gitignored) and are referenced via env vars
