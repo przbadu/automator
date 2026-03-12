@@ -22,7 +22,7 @@ Technically-minded people who want to build production RAG systems using AI codi
 
 ### In Scope
 - ✅ Document ingestion and processing
-- ✅ Vector search with pgvector
+- ✅ Vector search with ChromaDB
 - ✅ Hybrid search (keyword + vector)
 - ✅ Reranking
 - ✅ Metadata extraction
@@ -52,56 +52,40 @@ Technically-minded people who want to build production RAG systems using AI codi
 |-------|--------|
 | Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui |
 | Backend | Python + FastAPI |
-| Database | Supabase (Postgres + pgvector + Auth + Storage + Realtime) |
-| LLM (Module 1) | OpenAI Responses API (managed threads + file_search) |
-| LLM (Module 2+) | Any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio, etc.) |
-| Observability | LangSmith |
+| Database | SQLite (via aiosqlite) — all data stays local |
+| Vector DB | ChromaDB (local, persistent) — runs in-process alongside SQLite |
+| Auth | JWT (bcrypt + JWT tokens, no external auth provider) |
+| File Storage | Local filesystem (`uploads/` directory) |
+| LLM | Any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio, local LLMs) |
+| Observability | Langfuse (self-hosted) |
 
 ## Constraints
 
 - No LLM frameworks - raw OpenAI SDK using the standard Chat Completions API (OpenAI-compatible), Pydantic for structured outputs
-- Row-Level Security on all tables - users only see their own data
+- All data stays local — SQLite for relational data, ChromaDB for vectors, local filesystem for files
+- User-scoped data — users only see their own data (enforced via user_id filtering in queries and ChromaDB metadata filters)
 - Streaming chat via SSE
-- Ingestion status via Supabase Realtime
+- Ingestion status via SSE (server-sent events)
 
 ---
 
-## Module 1: The App Shell + Observability
+## Module 1: The App Shell + Observability ✅
 
-**Build:** Auth, chat UI, OpenAI Responses API (manages threads + file_search), LangSmith tracing
+**Build:** Auth (JWT + bcrypt), chat UI, Chat Completions API (local LLM), Langfuse tracing
 
-**Learn:** What RAG is, why managed RAG exists, its limitations (OpenAI handles memory and retrieval - black box)
+**Learn:** What RAG is, app shell architecture, SSE streaming, JWT auth flow, observability from day one
 
-**Note:** The Responses API is OpenAI-specific. It provides managed threads and built-in file search, but locks you into OpenAI. Module 2 transitions to the standard Chat Completions API for provider flexibility.
-
----
-
-## Architectural Decision: Module 1 → Module 2 Transition
-
-At the end of Module 1, you have a working chat app using OpenAI's **Responses API**—a managed solution where OpenAI handles threads, memory, and file search. In Module 2, you switch to the standard **Chat Completions API** to support any OpenAI-compatible provider (OpenRouter, Ollama, LM Studio, etc.).
-
-**The decision you need to make:** What do you do with the Responses API code? Here are two common approaches, but you're not limited to these—come up with your own if it makes sense for your use case.
-
-| Option | Approach | Pros | Cons |
-|--------|----------|------|------|
-| **A: Replace** | Remove Responses API code entirely, rebuild on Chat Completions | Clean codebase, single pattern, easier to maintain | Lose the ability to use OpenAI's managed RAG |
-| **B: Dual Support** | Keep Responses API alongside Chat Completions, configurable per request | Flexibility to use either approach, compare them side-by-side | More complex codebase, two patterns to understand |
-
-There is no right answer—this is a real architectural choice you'll face in building production systems.
-
-**In the video, I chose Option A**—completely removing the Responses API code from the codebase and any related schema from the database. This keeps things simple and focused on the OpenAI-compatible Chat Completions pattern going forward.
-
-**This is a lesson in steering Claude Code**: you need to clearly communicate your decision and guide the AI to implement it correctly. Be explicit about what you want removed, refactored, or kept.
+**Note:** We started directly with Chat Completions API (not OpenAI's Responses API), so there's no migration needed for Module 2. We use a local LLM via any OpenAI-compatible endpoint.
 
 ---
 
 ## Module 2: BYO Retrieval + Memory
 
-**Prerequisites:** Complete the architectural decision above.
+**Prerequisites:** Module 1 complete (Chat Completions API and chat history already working).
 
-**Build:** Ingestion UI, file storage, chunking → embedding → pgvector, retrieval tool, Chat Completions API integration (OpenRouter/Ollama/LM Studio), chat history storage (stateless API - you manage memory now), realtime ingestion status
+**Build:** Ingestion UI, file storage (local filesystem), chunking → embedding → ChromaDB, retrieval tool integrated into chat, realtime ingestion status via SSE
 
-**Learn:** Chunking, embeddings, vector search, tool calling, relevance thresholds, managing conversation history, **steering AI agents through architectural refactoring**
+**Learn:** Chunking, embeddings, vector search, relevance thresholds, context injection, tool calling
 
 ---
 

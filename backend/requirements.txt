@@ -9,3 +9,6 @@ sse-starlette
 pyjwt
 bcrypt
 aiosqlite
+chromadb
+tiktoken
+python-multipart

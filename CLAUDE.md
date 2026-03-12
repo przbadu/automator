@@ -5,8 +5,11 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 ## Stack
 - Frontend: React + Vite + Tailwind + shadcn/ui
 - Backend: Python + FastAPI
-- Database: Supabase (Postgres, pgvector, Auth, Storage, Realtime)
-- LLM: OpenAI (Module 1), OpenRouter (Module 2+)
+- Database: SQLite (via aiosqlite) — all data stays local
+- Vector DB: ChromaDB (local, persistent) — runs in-process alongside SQLite
+- Auth: JWT (bcrypt + JWT tokens)
+- File Storage: Local filesystem (`uploads/` directory)
+- LLM: Any OpenAI-compatible endpoint (local LLMs, OpenRouter, Ollama, LM Studio)
 - Observability: Langfuse (self-hosted at http://192.168.1.152:3000)
 
 ## Rules
@@ -14,9 +17,9 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 - Python backend must use a `venv` virtual environment
 - No LangChain, no LangGraph - raw SDK calls only
 - Use Pydantic for structured LLM outputs
-- All tables need Row-Level Security - users only see their own data
+- All data is user-scoped — users only see their own data (enforced via user_id filtering in queries and ChromaDB metadata filters)
 - Stream chat responses via SSE
-- Use Supabase Realtime for ingestion status updates
+- Ingestion status updates via SSE (server-sent events)
 - Module 2+ uses stateless completions - store and send chat history yourself
 - Ingestion is manual file upload only - no connectors or automated pipelines
 

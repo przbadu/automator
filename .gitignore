@@ -25,3 +25,7 @@ playwright-report/
 
 # OS
 .DS_Store
+
+# Document ingestion
+backend/chroma_data/
+backend/uploads/

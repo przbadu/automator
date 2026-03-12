@@ -34,3 +34,17 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 8: Validation — Chat auto-scrolls to bottom
 - [x] Task 9: Stop generation button — abort SSE stream and save partial response
 - [x] Task 10: Validation — Stop button appears during streaming, aborts and saves partial content
+
+### Module 2: Document Ingestion & BYO Retrieval
+- [x] Task 1: Dependencies and Configuration (chromadb, tiktoken, python-multipart, config settings)
+- [x] Task 2: Database Schema Extension (Migration 002 — documents table)
+- [x] Task 3: ChromaDB Initialization (persistent client, document_chunks collection)
+- [x] Task 4: File Upload Storage and Document API (CRUD endpoints, storage service)
+- [x] Task 5: Chunking Service (recursive text splitting with token-based sizing)
+- [x] Task 6: Embedding Service (OpenAI-compatible async embeddings)
+- [x] Task 7: Ingestion Pipeline Service (background task: read → chunk → embed → store)
+- [x] Task 8: Retrieval Service (query embedding + ChromaDB similarity search)
+- [x] Task 9: Integrate Retrieval into Chat (RAG context injection via system prompt)
+- [x] Task 10: Ingestion Status SSE Endpoint (real-time status updates)
+- [x] Task 11: Ingestion UI — Frontend (view toggle, upload, document list, status badges)
+- [x] Task 12: End-to-End Validation (6/6 Playwright tests passing)
