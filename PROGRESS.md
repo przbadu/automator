@@ -59,7 +59,17 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 7: Add shadcn components (select, label, switch)
 - [x] Task 8: Settings page & LLM config UI (SettingsPage, LLMConfigPanel, LLMConfigForm)
 - [x] Task 9: Restructure navigation (remove tab bar, add gear icon in sidebar)
-- [ ] Task 10: Validation — Backend starts, migration runs, llm_configs table exists
-- [ ] Task 11: Validation — CRUD API works with encrypted keys
-- [ ] Task 12: Validation — Settings UI accessible via gear icon, LLM configs and Documents tabs work
-- [ ] Task 13: Validation — No regressions on existing chat/document features
+- [x] Task 10: Validation — Backend starts, migration runs, llm_configs table exists
+- [x] Task 11: Validation — CRUD API works with encrypted keys
+- [x] Task 12: Validation — Settings UI accessible via gear icon, LLM configs and Documents tabs work
+- [x] Task 13: Validation — No regressions on existing chat/document features
+
+### Regression Test Suite
+- [x] Task 1: Shared fixtures (test-data, auth, api-client, SSE parser, cleanup)
+- [x] Task 2: API tests — health, auth, threads, messages, documents, llm-configs (41 tests)
+- [x] Task 3: UI tests — auth forms, chat layout, settings page (20 tests)
+- [x] Task 4: LLM tests — streaming, auto-title, RAG retrieval (8 tests)
+- [x] Task 5: Playwright config with 3 projects (api, ui, llm)
+- [x] Task 6: npm test scripts (test, test:fast, test:api, test:ui, test:llm)
+- [x] Task 7: CLAUDE.md updated with testing instructions for future agents
+- [x] Full suite: 69/69 passing
