@@ -43,5 +43,13 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 3. **Validate** - Test and verify the implementation works correctly. Use browser testing where applicable via an appropriate MCP
 4. **Iterate** - Fix any issues found during validation
 
+## Validation
+- Use Playwright in **headless mode** to validate features after each module
+- Test credentials: `test@example.com` / `password123` — create once during Module 1 validation, reuse for all future modules
+- Servers must be running (`bin/dev`) before validation
+- Backend API: `http://0.0.0.0:8000` | Frontend: `http://0.0.0.0:5173`
+- Validate both UI flows (via Playwright browser automation) and API endpoints
+- Each module's validation tasks are tracked in PROGRESS.md
+
 ## Progress
 Check PROGRESS.md for current module status. Update it as you complete tasks.

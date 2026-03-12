@@ -19,5 +19,9 @@ dist/
 # Database
 *.db
 
+# Playwright
+test-results/
+playwright-report/
+
 # OS
 .DS_Store

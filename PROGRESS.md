@@ -17,3 +17,8 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 5: LangSmith Observability (wrap_openai setup)
 - [x] Task 6: Chat Completions API + SSE Streaming (thread CRUD + message streaming)
 - [x] Task 7: Chat UI (ChatLayout, ThreadList, MessageList, MessageInput, streaming)
+- [x] Task 8: Validation — Health endpoint responds with `{"status": "ok"}`
+- [x] Task 9: Validation — Signup flow creates test user (test@example.com / password123)
+- [x] Task 10: Validation — Login flow with test credentials
+- [x] Task 11: Validation — Chat thread creation and listing
+- [x] Task 12: Validation — Message sending with SSE streaming
