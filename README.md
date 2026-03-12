@@ -44,10 +44,26 @@ A hands-on course where you collaborate with Claude Code to build a full-feature
 ## Getting Started
 
 1. Clone this repo
-2. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-3. Open in your IDE (Cursor, VS Code, etc.)
-4. Run `claude` in the terminal
-5. Use the `/onboard` command to get started
+2. Install prerequisites:
+   - [Node.js](https://nodejs.org/) (v18+)
+   - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+   - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+3. Copy `.env.example` to `.env` and fill in your API keys
+4. Start the app:
+
+```bash
+# Development (hot-reload for both frontend and backend)
+bin/dev
+
+# Production (optimized build, multi-worker backend)
+bin/prod
+```
+
+The scripts handle everything: creating virtual environments, installing dependencies, and starting both servers.
+
+- **Backend:** http://localhost:8000
+- **Frontend:** http://localhost:5173
+- **Health check:** http://localhost:8000/health
 
 ## Docs
 

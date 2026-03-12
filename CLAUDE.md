@@ -31,6 +31,12 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
   - ⚠️ **Medium** - May need iteration, some complexity
   - 🔴 **Complex** - Break into sub-plans before executing
 
+## Running the App
+- **Dev:** `bin/dev` — installs deps (uv for Python, npm for frontend), starts backend with `--reload` and Vite dev server
+- **Prod:** `bin/prod` — installs deps, builds frontend, starts backend with 4 workers and Vite preview server
+- Both scripts require `.env` (copy from `.env.example`), `uv`, and `node` installed
+- Backend: http://localhost:8000 | Frontend: http://localhost:5173 | Health: http://localhost:8000/health
+
 ## Development Flow
 1. **Plan** - Create a detailed plan and save it to `.agent/plans/`
 2. **Build** - Execute the plan to implement the feature
