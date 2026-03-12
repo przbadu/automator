@@ -9,9 +9,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 import aiosqlite
 from sse_starlette.sse import EventSourceResponse
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.chat import MessageCreate, MessageResponse, ThreadCreate, ThreadResponse
+from app.services.encryption_service import decrypt_value
+from app.services.langfuse_service import create_openai_client, openai_client
 from app.services.llm_service import build_rag_system_message, generate_thread_title, get_thread_messages, stream_chat_completion
 from app.services.retrieval_service import retrieve_relevant_chunks
 
@@ -165,6 +168,35 @@ async def send_message(
     # Check if this is the first message (for title generation)
     is_first_message = len(messages) == 1
 
+    # Resolve LLM config: user's default DB config → env var fallback → error
+    llm_client = None
+    llm_model = None
+    llm_provider = None
+
+    config_cursor = await db.execute(
+        "SELECT * FROM llm_configs WHERE user_id = ? AND is_default = 1",
+        (current_user["id"],),
+    )
+    llm_config_row = await config_cursor.fetchone()
+
+    if llm_config_row:
+        api_key = decrypt_value(llm_config_row["api_key_encrypted"])
+        llm_provider = llm_config_row["provider"]
+        llm_model = llm_config_row["model_name"]
+        if llm_provider == "anthropic":
+            from app.services.anthropic_service import create_anthropic_client
+            llm_client = create_anthropic_client(api_key)
+        else:
+            api_url = llm_config_row["api_url"]
+            llm_client = create_openai_client(api_key, api_url)
+    elif not settings.llm_api_key:
+        from sse_starlette.sse import EventSourceResponse as _ESR
+
+        async def _error_gen():
+            yield {"data": json.dumps({"type": "error", "message": "No LLM configured. Please add one in Settings."})}
+
+        return _ESR(_error_gen())
+
     # Retrieve relevant document context
     system_message = None
     try:
@@ -186,7 +218,7 @@ async def send_message(
         assistant_content = ""
         stopped = False
         try:
-            async for delta in stream_chat_completion(messages, stop_event=stop_event, system_message=system_message):
+            async for delta in stream_chat_completion(messages, stop_event=stop_event, system_message=system_message, client=llm_client, model=llm_model, provider=llm_provider):
                 assistant_content += delta
                 yield {"data": json.dumps({"type": "delta", "content": delta})}
 
@@ -212,7 +244,7 @@ async def send_message(
                 new_title = None
                 if is_first_message and not stopped:
                     try:
-                        new_title = await generate_thread_title(req.content)
+                        new_title = await generate_thread_title(req.content, client=llm_client, model=llm_model, provider=llm_provider)
                         await db.execute(
                             "UPDATE threads SET title = ? WHERE id = ?",
                             (new_title, thread_id),

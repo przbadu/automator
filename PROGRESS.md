@@ -48,3 +48,18 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 10: Ingestion Status SSE Endpoint (real-time status updates)
 - [x] Task 11: Ingestion UI — Frontend (view toggle, upload, document list, status badges)
 - [x] Task 12: End-to-End Validation (6/6 Playwright tests passing)
+
+### Module 2.1: Settings Page with LLM Configurations
+- [x] Task 1: Database migration (003_llm_configs_schema.sql)
+- [x] Task 2: Encryption service + config update (cryptography Fernet, auto-gen key)
+- [x] Task 3: Pydantic models for LLM configs (create/update/response, provider map)
+- [x] Task 4: CRUD router for /llm-configs (list, create, update, delete, default)
+- [x] Task 5: Provider-aware LLM client (Anthropic service, modify llm_service, chat router)
+- [x] Task 6: Frontend types & hook (LLMConfig types, useLLMConfigs hook)
+- [x] Task 7: Add shadcn components (select, label, switch)
+- [x] Task 8: Settings page & LLM config UI (SettingsPage, LLMConfigPanel, LLMConfigForm)
+- [x] Task 9: Restructure navigation (remove tab bar, add gear icon in sidebar)
+- [ ] Task 10: Validation — Backend starts, migration runs, llm_configs table exists
+- [ ] Task 11: Validation — CRUD API works with encrypted keys
+- [ ] Task 12: Validation — Settings UI accessible via gear icon, LLM configs and Documents tabs work
+- [ ] Task 13: Validation — No regressions on existing chat/document features

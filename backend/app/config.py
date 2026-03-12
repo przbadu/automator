@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     chroma_dir: str = "./chroma_data"
     max_upload_size_mb: int = 10
 
+    # Encryption
+    encryption_key: str = ""
+
     # App
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000

@@ -12,3 +12,6 @@ aiosqlite
 chromadb
 tiktoken
 python-multipart
+cryptography
+anthropic
+httpx

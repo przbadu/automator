@@ -5,6 +5,10 @@ import aiosqlite
 
 from app.config import settings
 from app.services.langfuse_service import openai_client
+from app.services.anthropic_service import (
+    generate_anthropic_title,
+    stream_anthropic_completion,
+)
 
 
 async def get_thread_messages(db: aiosqlite.Connection, thread_id: str) -> list[dict]:
@@ -40,18 +44,36 @@ async def stream_chat_completion(
     messages: list[dict],
     stop_event: asyncio.Event | None = None,
     system_message: str | None = None,
+    client=None,
+    model: str | None = None,
+    provider: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream chat completion deltas from the LLM.
 
-    If stop_event is provided and gets set, the stream is closed (cancelling
-    the request to the LLM server) and the generator exits.
+    Supports both OpenAI-compatible and Anthropic providers.
     """
+    effective_model = model or settings.llm_model
+
+    if provider == "anthropic":
+        async for delta in stream_anthropic_completion(
+            messages,
+            client=client,
+            model=effective_model,
+            stop_event=stop_event,
+            system_message=system_message,
+        ):
+            yield delta
+        return
+
+    effective_client = client or openai_client
+
+    # OpenAI-compatible path
     llm_messages = list(messages)
     if system_message:
         llm_messages = [{"role": "system", "content": system_message}] + llm_messages
 
-    response = await openai_client.chat.completions.create(
-        model=settings.llm_model,
+    response = await effective_client.chat.completions.create(
+        model=effective_model,
         messages=llm_messages,
         stream=True,
     )
@@ -62,14 +84,24 @@ async def stream_chat_completion(
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content
     finally:
-        # Close the HTTP connection to the LLM server, stopping generation
         await response.close()
 
 
-async def generate_thread_title(user_message: str) -> str:
-    """Generate a short, descriptive title for a chat thread based on the user's first message."""
-    response = await openai_client.chat.completions.create(
-        model=settings.llm_model,
+async def generate_thread_title(
+    user_message: str,
+    client=None,
+    model: str | None = None,
+    provider: str | None = None,
+) -> str:
+    """Generate a short, descriptive title for a chat thread."""
+    effective_model = model or settings.llm_model
+
+    if provider == "anthropic":
+        return await generate_anthropic_title(user_message, client, effective_model)
+
+    effective_client = client or openai_client
+    response = await effective_client.chat.completions.create(
+        model=effective_model,
         messages=[
             {
                 "role": "system",
