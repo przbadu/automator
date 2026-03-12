@@ -12,7 +12,8 @@ from sse_starlette.sse import EventSourceResponse
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.chat import MessageCreate, MessageResponse, ThreadCreate, ThreadResponse
-from app.services.llm_service import generate_thread_title, get_thread_messages, stream_chat_completion
+from app.services.llm_service import build_rag_system_message, generate_thread_title, get_thread_messages, stream_chat_completion
+from app.services.retrieval_service import retrieve_relevant_chunks
 
 logger = logging.getLogger(__name__)
 
@@ -164,6 +165,19 @@ async def send_message(
     # Check if this is the first message (for title generation)
     is_first_message = len(messages) == 1
 
+    # Retrieve relevant document context
+    system_message = None
+    try:
+        retrieval_results = await retrieve_relevant_chunks(req.content, current_user["id"])
+        if retrieval_results:
+            context_chunks = [
+                {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content}
+                for r in retrieval_results
+            ]
+            system_message = build_rag_system_message(context_chunks)
+    except Exception:
+        logger.warning("Retrieval failed, proceeding without context", exc_info=True)
+
     # Register stop signal for this thread
     stop_event = asyncio.Event()
     _active_streams[thread_id] = stop_event
@@ -172,7 +186,7 @@ async def send_message(
         assistant_content = ""
         stopped = False
         try:
-            async for delta in stream_chat_completion(messages, stop_event=stop_event):
+            async for delta in stream_chat_completion(messages, stop_event=stop_event, system_message=system_message):
                 assistant_content += delta
                 yield {"data": json.dumps({"type": "delta", "content": delta})}
 

@@ -5,12 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, chat
+from app.routers import auth, chat, documents
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    # Reset any documents stuck in processing from a previous crash
+    from app.services.ingestion_service import reset_stuck_documents
+    await reset_stuck_documents()
     yield
 
 
@@ -27,6 +30,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(chat.router)
+app.include_router(documents.router)
 
 
 @app.get("/health")

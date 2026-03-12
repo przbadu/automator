@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import aiosqlite
+import chromadb
 
 from app.config import settings
 
@@ -17,6 +18,36 @@ def _resolve_db_path() -> str:
 
 
 DB_PATH = _resolve_db_path()
+
+
+def _resolve_chroma_path() -> str:
+    """Resolve the ChromaDB path relative to the backend directory."""
+    chroma_dir = settings.chroma_dir
+    if chroma_dir.startswith("./"):
+        return str(Path(__file__).parent.parent / chroma_dir[2:])
+    return chroma_dir
+
+
+_chroma_client: chromadb.ClientAPI | None = None
+
+
+def get_chroma_client() -> chromadb.ClientAPI:
+    """Get or create the persistent ChromaDB client."""
+    global _chroma_client
+    if _chroma_client is None:
+        path = _resolve_chroma_path()
+        os.makedirs(path, exist_ok=True)
+        _chroma_client = chromadb.PersistentClient(path=path)
+    return _chroma_client
+
+
+def get_chroma_collection() -> chromadb.Collection:
+    """Get or create the document_chunks collection."""
+    client = get_chroma_client()
+    return client.get_or_create_collection(
+        name="document_chunks",
+        metadata={"hnsw:space": "cosine"},
+    )
 
 
 async def init_db() -> None:

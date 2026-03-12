@@ -23,6 +23,19 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
+    # Embeddings (OpenAI-compatible)
+    embedding_base_url: str = "http://localhost:11434/v1"
+    embedding_api_key: str = ""
+    embedding_model: str = "nomic-embed-text"
+    embedding_dimensions: int = 768
+
+    # Document ingestion
+    chunk_size: int = 512
+    chunk_overlap: int = 50
+    upload_dir: str = "./uploads"
+    chroma_dir: str = "./chroma_data"
+    max_upload_size_mb: int = 10
+
     # App
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000
