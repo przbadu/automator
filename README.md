@@ -1,76 +1,150 @@
-# Cloud Code Agentic RAG Masterclass
+# Automator
 
-Build an agentic RAG application from scratch by collaborating with Claude Code. Follow along with our video series using the docs in this repo.
+A self-hosted RAG (Retrieval-Augmented Generation) application with a chat interface and document ingestion pipeline. All data stays local — SQLite for storage, ChromaDB for vector search, and local filesystem for uploaded files.
 
-[![Claude Code RAG Masterclass](./video-thumbnail.png)](https://www.youtube.com/watch?v=xgPWCuqLoek)
+## Feature Roadmap
 
-[Watch the full video on YouTube](https://www.youtube.com/watch?v=xgPWCuqLoek)
+### Core Platform
+- [x] JWT authentication (signup, login, refresh tokens)
+- [x] Threaded chat with SSE streaming
+- [x] Auto-generated chat titles from first message
+- [x] Stop generation (abort stream, save partial response)
+- [x] Fixed layout with scrollable message area
+- [x] Langfuse observability and tracing
 
-## What This Is
+### Document Ingestion & RAG
+- [x] Drag-and-drop file upload (.txt, .md)
+- [x] Chunking and embedding pipeline (background processing)
+- [x] ChromaDB vector storage with user-scoped isolation
+- [x] Real-time ingestion status via SSE
+- [x] RAG context injection into chat responses
+- [x] Record manager with SHA-256 content hashing and deduplication
+- [ ] LLM-extracted metadata and filtered retrieval
+- [ ] Multi-format support (PDF, DOCX, HTML) via Docling
+- [ ] Hybrid search (keyword + vector) with RRF
+- [ ] Reranking
 
-A hands-on course where you collaborate with Claude Code to build a full-featured RAG system. You're not the one writing code—Claude is. Your job is to guide it, understand what you're building, and course-correct when needed.
+### LLM Configuration
+- [x] Per-user LLM provider configs (create, update, delete)
+- [x] Multi-provider support (OpenAI, Anthropic, Ollama, OpenRouter, Gemini, Grok)
+- [x] Encrypted API key storage (Fernet)
+- [x] Default config selection
+- [x] Settings UI with config management
 
-**You don't need to know how to code.** You do need to be technically minded and willing to learn about APIs, databases, and system architecture.
+### Agentic Features
+- [ ] Text-to-SQL tool (query structured data)
+- [ ] Web search fallback (when documents lack the answer)
+- [ ] Sub-agents with isolated context and delegation
 
-## What You'll Build
-
-- **Chat interface** with threaded conversations, streaming, tool calls, and subagent reasoning
-- **Document ingestion** with drag-and-drop upload and processing status
-- **Full RAG pipeline**: chunking, embedding, hybrid search, reranking
-- **Agentic patterns**: text-to-SQL, web search, subagents with isolated context
+### Testing
+- [x] Playwright e2e test suite (API, UI, LLM tiers)
+- [x] Shared test fixtures and helpers
+- [x] npm test scripts for each tier
 
 ## Tech Stack
 
 | Layer | Tech |
 |-------|------|
-| Frontend | React, TypeScript, Tailwind, shadcn/ui, Vite |
-| Backend | Python, FastAPI |
-| Database | Supabase (Postgres + pgvector + Auth + Storage) |
-| Doc Processing | Docling |
-| AI Models | Local (LM Studio) or Cloud (OpenAI, OpenRouter) |
-| Observability | LangSmith |
+| Frontend | React, TypeScript, Tailwind CSS, shadcn/ui, Vite |
+| Backend | Python, FastAPI, Uvicorn |
+| Database | SQLite (aiosqlite) |
+| Vector DB | ChromaDB (local, persistent) |
+| Auth | JWT (bcrypt + HS256) |
+| File Storage | Local filesystem |
+| LLM | Any OpenAI-compatible API |
+| Observability | Langfuse (self-hosted) |
 
-## The 8 Modules
+## Prerequisites
 
-1. **App Shell** — Auth, chat UI, managed RAG with OpenAI Responses API
-2. **BYO Retrieval + Memory** — Ingestion, pgvector, switch to generic completions API
-3. **Record Manager** — Content hashing, deduplication
-4. **Metadata Extraction** — LLM-extracted metadata, filtered retrieval
-5. **Multi-Format Support** — PDF, DOCX, HTML, Markdown via Docling
-6. **Hybrid Search & Reranking** — Keyword + vector search, RRF, reranking
-7. **Additional Tools** — Text-to-SQL, web search fallback
-8. **Subagents** — Isolated context, document analysis delegation
+- [Node.js](https://nodejs.org/) v18+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
+- An OpenAI-compatible LLM endpoint (e.g. [Ollama](https://ollama.com/), [LM Studio](https://lmstudio.ai/))
 
-## Getting Started
-
-1. Clone this repo
-2. Install prerequisites:
-   - [Node.js](https://nodejs.org/) (v18+)
-   - [uv](https://docs.astral.sh/uv/getting-started/installation/) (Python package manager)
-   - [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-3. Copy `.env.example` to `.env` and fill in your API keys
-4. Start the app:
+## Setup
 
 ```bash
-# Development (hot-reload for both frontend and backend)
+git clone https://github.com/przbadu/automator.git
+cd automator
+cp .env.example .env
+```
+
+Edit `.env` with your configuration:
+
+```bash
+# LLM (any OpenAI-compatible endpoint)
+LLM_BASE_URL=http://localhost:11434/v1   # Ollama default
+LLM_API_KEY=no
+LLM_MODEL=qwen3.5-2b
+
+# Embeddings
+EMBEDDING_BASE_URL=http://localhost:11434/v1
+EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_DIMENSIONS=768
+
+# JWT (generate with: openssl rand -hex 32)
+JWT_SECRET=your-secret-here
+
+# Langfuse (optional)
+LANGFUSE_PUBLIC_KEY=
+LANGFUSE_SECRET_KEY=
+LANGFUSE_HOST=http://localhost:3000
+```
+
+## Running
+
+```bash
+# Development (hot-reload)
 bin/dev
 
-# Production (optimized build, multi-worker backend)
+# Production (optimized build, 4 workers)
 bin/prod
 ```
 
-The scripts handle everything: creating virtual environments, installing dependencies, and starting both servers.
+Both scripts handle virtual environment creation, dependency installation, and starting both servers.
 
-- **Backend:** http://localhost:8000
-- **Frontend:** http://localhost:5173
-- **Health check:** http://localhost:8000/health
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| Backend API | http://localhost:8000 |
+| Health check | http://localhost:8000/health |
 
-## Docs
+## Testing
 
-- [PRD.md](./PRD.md) — What to build (the 8 modules in detail)
-- [CLAUDE.md](./CLAUDE.md) — Context for Claude Code
-- [PROGRESS.md](./PROGRESS.md) — Track your build progress
+The project has a Playwright e2e test suite organized into three tiers:
 
-## Join the Community
+```bash
+npm test              # All tests (API + UI + LLM)
+npm run test:fast     # API + UI only (~15s, no LLM needed)
+npm run test:api      # API tests only (~3s)
+npm run test:ui       # UI tests only (~12s)
+npm run test:llm      # LLM-dependent tests (~2min)
+```
 
-If you want to connect with hundreds of builders creating production-grade AI and RAG systems, join us in [The AI Automators community](https://www.theaiautomators.com/). Share your progress, get help when you're stuck, and see what others are building.
+Servers must be running (`bin/dev`) before running tests.
+
+## Project Structure
+
+```
+backend/
+  app/
+    routers/          # API endpoints (auth, threads, messages, documents, llm-configs)
+    models/           # Pydantic request/response models
+    services/         # Business logic (ingestion, chunking, embedding, record manager)
+    middleware/       # JWT auth middleware
+  migrations/         # SQL migration files
+frontend/
+  src/
+    components/       # React components (auth, chat, documents, settings, ui)
+    hooks/            # Custom hooks (useAuth, useChat, useDocuments, useLLMConfigs)
+    types/            # TypeScript interfaces
+tests/
+  e2e/
+    api/              # API-level tests
+    ui/               # Browser UI tests
+    llm/              # LLM-dependent tests
+    fixtures/         # Shared test helpers
+```
+
+## License
+
+MIT
