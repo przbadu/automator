@@ -211,7 +211,7 @@ async def classify_intent(
         else:
             doc_list = "(no documents uploaded yet)"
         prompt_template = _build_intent_system_prompt()
-        system_prompt = prompt_template.format(document_list=doc_list)
+        system_prompt = prompt_template.replace("{document_list}", doc_list)
 
         if provider == "anthropic":
             response = await effective_client.messages.create(

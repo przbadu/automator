@@ -113,6 +113,7 @@ async def run_sub_agent(
             system_prompt=system_prompt,
             stop_event=stop_event,
             db=db,
+            tools=tools,
         ):
             if event["type"] == "sub_agent_tool_call":
                 tool_calls_count += 1
@@ -135,6 +136,7 @@ async def run_sub_agent(
             system_prompt=system_prompt,
             stop_event=stop_event,
             db=db,
+            tools=tools,
         ):
             if event["type"] == "sub_agent_tool_call":
                 tool_calls_count += 1

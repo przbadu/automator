@@ -111,17 +111,15 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
           setStreamingContent((prev) => prev + delta)
         },
         async (_messageId, threadTitle, stopped) => {
-          setStreamingContent("")
           setIsWaiting(false)
-          setStreamingSources([])
-          setSubAgentActivity(null)
 
           // Update thread title if generated
           if (threadTitle && thread) {
             updateThreadTitle(thread.id, threadTitle)
           }
 
-          // Reload messages from server to get saved content (including partial)
+          // Reload messages from server FIRST, then clear streaming state
+          // so the UI transitions seamlessly from streaming to persisted data
           const res = await fetch(
             `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/threads/${thread.id}/messages`,
             {
@@ -131,7 +129,16 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
             },
           )
           if (res.ok) {
-            setMessages(await res.json())
+            const newMessages = await res.json()
+            // Batch all state updates together so React renders once
+            setMessages(newMessages)
+            setStreamingContent("")
+            setStreamingSources([])
+            setSubAgentActivity(null)
+          } else {
+            setStreamingContent("")
+            setStreamingSources([])
+            setSubAgentActivity(null)
           }
           loadThreads()
         },
