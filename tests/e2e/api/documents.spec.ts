@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { test, expect } from "@playwright/test";
 import { ApiClient } from "../fixtures/api-client";
 import { BACKEND_URL } from "../fixtures/test-data";
@@ -227,6 +229,46 @@ test.describe("Documents API", () => {
     const fetched = await getResp.json();
     expect("content_hash" in fetched).toBe(true);
     expect(fetched.content_hash).toHaveLength(64);
+  });
+
+  test("Upload .pdf file returns 201", async () => {
+    const pdfPath = path.join(__dirname, "../fixtures/sample.pdf");
+    const buffer = Buffer.from(fs.readFileSync(pdfPath));
+    const resp = await client.uploadDocumentBuffer(
+      "test-upload.pdf",
+      buffer,
+      "application/pdf"
+    );
+    expect(resp.status()).toBe(201);
+    const doc = await resp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.filename).toBe("test-upload.pdf");
+    expect(doc.mime_type).toBe("application/pdf");
+    expect(doc.status).toBe("pending");
+  });
+
+  test("Upload .html file returns 201", async () => {
+    const resp = await client.uploadDocument(
+      "test-upload.html",
+      "<html><body><p>Hello</p></body></html>",
+      "text/html"
+    );
+    expect(resp.status()).toBe(201);
+    const doc = await resp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.filename).toBe("test-upload.html");
+  });
+
+  test("Upload .csv file returns 201", async () => {
+    const resp = await client.uploadDocument(
+      "test-upload.csv",
+      "name,age\nAlice,30\nBob,25",
+      "text/csv"
+    );
+    expect(resp.status()).toBe(201);
+    const doc = await resp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.filename).toBe("test-upload.csv");
   });
 
   test("Upload without auth returns 401", async ({ request }) => {

@@ -67,7 +67,7 @@ export interface Document {
   filename: string
   file_size: number
   mime_type: string
-  status: "pending" | "processing" | "chunking" | "extracting_metadata" | "embedding" | "completed" | "failed"
+  status: "pending" | "processing" | "converting" | "chunking" | "extracting_metadata" | "embedding" | "completed" | "failed"
   chunk_count: number
   error_message: string | null
   content_hash: string | null

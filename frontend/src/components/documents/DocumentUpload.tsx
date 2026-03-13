@@ -107,7 +107,7 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
             : "Drag & drop files here, or click to browse"}
         </p>
         <p className="text-xs text-muted-foreground/60 mb-3">
-          Supported: .txt, .md — multiple files allowed
+          Supported: .txt, .md, .pdf, .docx, .pptx, .html, .xlsx, .csv
         </p>
         <Button
           variant="outline"
@@ -120,7 +120,7 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
         <input
           ref={inputRef}
           type="file"
-          accept=".txt,.md"
+          accept=".txt,.md,.pdf,.docx,.pptx,.html,.htm,.xlsx,.csv"
           multiple
           className="hidden"
           onChange={handleChange}

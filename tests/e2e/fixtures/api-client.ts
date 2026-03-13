@@ -124,6 +124,19 @@ export class ApiClient {
     });
   }
 
+  async uploadDocumentBuffer(name: string, buffer: Buffer, mimeType: string) {
+    return this.request.post(`${BACKEND_URL}/documents/upload`, {
+      headers: this.headers(),
+      multipart: {
+        file: {
+          name,
+          mimeType,
+          buffer,
+        },
+      },
+    });
+  }
+
   async listDocuments() {
     return this.request.get(`${BACKEND_URL}/documents`, {
       headers: this.headers(),

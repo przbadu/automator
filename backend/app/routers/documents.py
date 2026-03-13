@@ -20,8 +20,16 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
-ALLOWED_EXTENSIONS = {".txt", ".md"}
-ALLOWED_MIME_TYPES = {"text/plain", "text/markdown", "application/octet-stream"}
+ALLOWED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx", ".pptx", ".html", ".htm", ".xlsx", ".csv"}
+ALLOWED_MIME_TYPES = {
+    "text/plain", "text/markdown", "application/octet-stream",
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/html",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/csv",
+}
 
 
 def _check_extension(filename: str) -> str:
@@ -35,8 +43,21 @@ def _check_extension(filename: str) -> str:
     return ext
 
 
+_MIME_MAP = {
+    ".txt": "text/plain",
+    ".md": "text/markdown",
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".html": "text/html",
+    ".htm": "text/html",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".csv": "text/csv",
+}
+
+
 def _mime_for_ext(ext: str) -> str:
-    return "text/markdown" if ext == ".md" else "text/plain"
+    return _MIME_MAP.get(ext, "application/octet-stream")
 
 
 def _parse_metadata(raw: str | None) -> dict | None:
@@ -255,6 +276,10 @@ async def delete_document(
         collection.delete(where={"document_id": document_id})
     except Exception:
         logger.warning("Failed to delete chunks from ChromaDB for document %s", document_id)
+
+    # Invalidate BM25 keyword search cache for this user
+    from app.services.keyword_search_service import invalidate_cache
+    invalidate_cache(user_id)
 
     # Delete file from disk
     delete_file(user_id, document_id)

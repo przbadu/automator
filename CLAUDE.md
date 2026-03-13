@@ -14,7 +14,7 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 
 ## Rules
 - NEVER hardcode secrets, API keys, passwords, URLs, or personal info in code — all sensitive values go in `.env` (gitignored) and are referenced via env vars
-- Python backend must use a `venv` virtual environment
+- Python backend uses `uv` with `pyproject.toml` + `uv.lock` — run `uv sync` in `backend/` to install deps
 - No LangChain, no LangGraph - raw SDK calls only
 - Use Pydantic for structured LLM outputs
 - All data is user-scoped — users only see their own data (enforced via user_id filtering in queries and ChromaDB metadata filters)
@@ -35,9 +35,10 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
   - 🔴 **Complex** - Break into sub-plans before executing
 
 ## Running the App
-- **Dev:** `bin/dev` — installs deps (uv for Python, npm for frontend), starts backend with `--reload` and Vite dev server
-- **Prod:** `bin/prod` — installs deps, builds frontend, starts backend with 4 workers and Vite preview server
+- **Dev:** `bin/dev` — runs `uv sync` + `npm install`, starts backend with `--reload` and Vite dev server
+- **Prod:** `bin/prod` — runs `uv sync` + `npm install`, builds frontend, starts backend with 4 workers and Vite preview server
 - Both scripts require `.env` (copy from `.env.example`), `uv`, and `node` installed
+- **Adding Python deps:** `cd backend && uv add <package>` — this updates `pyproject.toml` and `uv.lock` automatically
 - Backend: http://localhost:8000 | Frontend: http://localhost:5173 | Health: http://localhost:8000/health
 
 ## Development Flow

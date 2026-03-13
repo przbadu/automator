@@ -34,7 +34,18 @@ class Settings(BaseSettings):
     chunk_overlap: int = 50
     upload_dir: str = "./uploads"
     chroma_dir: str = "./chroma_data"
-    max_upload_size_mb: int = 10
+    max_upload_size_mb: int = 50
+
+    # Hybrid search
+    hybrid_search_enabled: bool = True
+    rrf_k: int = 60
+    retrieval_candidate_k: int = 20
+    final_top_k: int = 5
+
+    # Reranker (cross-encoder API — vLLM, Jina, Cohere, TEI compatible)
+    reranker_base_url: str = ""
+    reranker_model: str = ""
+    reranker_top_n: int = 5
 
     # Encryption
     encryption_key: str = ""

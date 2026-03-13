@@ -6,6 +6,7 @@ const STATUS_CONFIG: Record<
 > = {
   pending: { label: "Pending", className: "bg-yellow-100 text-yellow-800" },
   processing: { label: "Processing", className: "bg-blue-100 text-blue-800 animate-pulse" },
+  converting: { label: "Converting", className: "bg-orange-100 text-orange-800 animate-pulse" },
   chunking: { label: "Chunking", className: "bg-blue-100 text-blue-800 animate-pulse" },
   extracting_metadata: { label: "Extracting Metadata", className: "bg-purple-100 text-purple-800 animate-pulse" },
   embedding: { label: "Embedding", className: "bg-blue-100 text-blue-800 animate-pulse" },

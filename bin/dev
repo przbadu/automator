@@ -49,17 +49,8 @@ log "Setting up Python backend..."
 
 cd "$BACKEND_DIR"
 
-if [ ! -d ".venv" ] && [ ! -d "venv" ]; then
-  log "Creating virtual environment with uv..."
-  uv venv
-fi
-
-# Determine venv path
-VENV_DIR="$BACKEND_DIR/.venv"
-[ -d "$BACKEND_DIR/venv" ] && VENV_DIR="$BACKEND_DIR/venv"
-
 log "Installing Python dependencies..."
-uv pip install -r requirements.txt --python "$VENV_DIR/bin/python" --quiet
+uv sync --quiet
 
 # --- Frontend setup ---
 
@@ -96,7 +87,7 @@ fi
 
 log "Starting backend (uvicorn --reload)..."
 cd "$BACKEND_DIR"
-"$VENV_DIR/bin/python" -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
 
 log "Starting frontend (vite dev)..."
 cd "$FRONTEND_DIR"

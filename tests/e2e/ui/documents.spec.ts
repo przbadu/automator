@@ -18,6 +18,16 @@ test.describe("Documents UI", () => {
     await client.dispose();
   });
 
+  test("Upload area shows supported formats including PDF", async ({ page }) => {
+    await uiLogin(page);
+    await page.getByTitle("Settings").click();
+    await page.getByText("Documents").click();
+    const label = page.locator("text=Supported:");
+    await expect(label).toContainText(".pdf");
+    await expect(label).toContainText(".docx");
+    await expect(label).toContainText(".xlsx");
+  });
+
   test("Upload duplicate file shows info message", async ({ page }) => {
     await uiLogin(page);
 

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -6,10 +7,11 @@ import aiosqlite
 
 from app.database import DB_PATH, get_chroma_collection
 from app.services.chunking_service import chunk_text
+from app.services.conversion_service import convert_document, needs_conversion
 from app.services.embedding_service import generate_embeddings
 from app.services.metadata_service import extract_metadata
 from app.services.status_events import publish
-from app.services.storage_service import read_file_text
+from app.services.storage_service import get_upload_path, read_file_text
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +55,14 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
         await _update_status(db, doc_id, user_id, "processing", progress="Reading file...")
 
         try:
-            text = read_file_text(user_id, doc_id, filename)
+            if needs_conversion(filename):
+                # Convert non-plaintext files via Docling
+                await _update_status(db, doc_id, user_id, "converting", progress="Converting document...")
+                file_path = get_upload_path(user_id, doc_id, filename)
+                loop = asyncio.get_event_loop()
+                text = await loop.run_in_executor(None, convert_document, file_path)
+            else:
+                text = read_file_text(user_id, doc_id, filename)
         except Exception as e:
             await _update_status(db, doc_id, user_id, "failed", error_message=f"Failed to read file: {e}")
             return
@@ -147,6 +156,10 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
         )
         logger.info("Document %s ingested: %d chunks", doc_id, len(chunks))
 
+        # Invalidate BM25 keyword search cache for this user
+        from app.services.keyword_search_service import invalidate_cache
+        invalidate_cache(user_id)
+
     except Exception as e:
         logger.exception("Ingestion failed for document %s", doc_id)
         try:
@@ -163,7 +176,7 @@ async def reset_stuck_documents() -> None:
     try:
         await db.execute(
             """UPDATE documents SET status = 'pending', updated_at = ?
-               WHERE status IN ('processing', 'chunking', 'extracting_metadata', 'embedding')""",
+               WHERE status IN ('processing', 'converting', 'chunking', 'extracting_metadata', 'embedding')""",
             (datetime.now(timezone.utc).isoformat(),),
         )
         await db.commit()
