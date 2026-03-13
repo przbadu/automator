@@ -4,14 +4,19 @@ import type { SourceCitation } from "@/types"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-interface SSEEvent {
-  type: "delta" | "done" | "sources" | "error"
+export interface SSEEvent {
+  type: "delta" | "done" | "sources" | "error" | "sub_agent_start" | "sub_agent_tool_call" | "sub_agent_tool_result" | "sub_agent_end"
   content?: string
   message_id?: string | null
   thread_title?: string | null
   stopped?: boolean
   sources?: SourceCitation[]
   message?: string
+  // Sub-agent fields
+  document?: string
+  tool?: string
+  args?: Record<string, unknown>
+  summary?: string
 }
 
 export function useSSE() {
@@ -26,6 +31,7 @@ export function useSSE() {
       onDelta: (text: string) => void,
       onDone: (messageId: string | null, threadTitle?: string | null, stopped?: boolean) => void,
       onSources?: (sources: SourceCitation[]) => void,
+      onSubAgentEvent?: (event: SSEEvent) => void,
     ) => {
       setStreaming(true)
       const controller = new AbortController()
@@ -70,6 +76,13 @@ export function useSSE() {
               onDelta(data.content)
             } else if (data.type === "done") {
               onDone(data.message_id ?? null, data.thread_title, data.stopped)
+            } else if (
+              data.type === "sub_agent_start" ||
+              data.type === "sub_agent_tool_call" ||
+              data.type === "sub_agent_tool_result" ||
+              data.type === "sub_agent_end"
+            ) {
+              onSubAgentEvent?.(data)
             }
           }
         }

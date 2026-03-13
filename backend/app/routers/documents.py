@@ -233,6 +233,43 @@ async def document_status_stream(
     return EventSourceResponse(event_generator())
 
 
+@router.get("/{document_id}/chunks")
+async def get_document_chunks(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Return all chunks for a document from ChromaDB, sorted by chunk_index."""
+    user_id = current_user["id"]
+
+    # Verify document belongs to user
+    cursor = await db.execute(
+        "SELECT id FROM documents WHERE id = ? AND user_id = ?",
+        (document_id, user_id),
+    )
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    collection = get_chroma_collection()
+    results = collection.get(
+        where={"$and": [{"user_id": user_id}, {"document_id": document_id}]},
+        include=["documents", "metadatas"],
+    )
+
+    if not results["documents"]:
+        return []
+
+    chunks = []
+    for doc, meta in zip(results["documents"], results["metadatas"]):
+        chunks.append({
+            "chunk_index": meta.get("chunk_index", 0),
+            "content": doc,
+        })
+
+    chunks.sort(key=lambda c: c["chunk_index"])
+    return chunks
+
+
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: str,

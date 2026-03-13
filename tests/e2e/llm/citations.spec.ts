@@ -60,8 +60,11 @@ test.describe("Citations & Conversation-Aware RAG (requires LLM)", () => {
         expect(source).toHaveProperty("chunk_index");
         expect(source).toHaveProperty("preview");
         expect(source).toHaveProperty("relevance_score");
+        expect(source).toHaveProperty("document_id");
         expect(source.relevance_score).toBeGreaterThan(0);
         expect(source.relevance_score).toBeLessThanOrEqual(1);
+        expect(typeof source.document_id).toBe("string");
+        expect((source.document_id as string).length).toBeGreaterThan(0);
       }
 
       // Cleanup

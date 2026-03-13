@@ -271,6 +271,48 @@ test.describe("Documents API", () => {
     expect(doc.filename).toBe("test-upload.csv");
   });
 
+  test("Get document chunks returns sorted chunks after ingestion", async () => {
+    const content = "First paragraph of chunk test.\n\nSecond paragraph of chunk test.\n\nThird paragraph of chunk test.";
+    const uploadResp = await client.uploadDocument("chunk-test.txt", content);
+    expect(uploadResp.status()).toBe(201);
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+
+    // Poll until ingestion completes
+    let status = doc.status;
+    let attempts = 0;
+    while (status !== "completed" && status !== "failed" && attempts < 60) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const resp = await client.getDocument(doc.id);
+      const d = await resp.json();
+      status = d.status;
+      attempts++;
+    }
+    expect(status).toBe("completed");
+
+    const chunksResp = await client.getDocumentChunks(doc.id);
+    expect(chunksResp.ok()).toBeTruthy();
+    const chunks = await chunksResp.json();
+    expect(chunks.length).toBeGreaterThan(0);
+
+    // Verify each chunk has required fields
+    for (const chunk of chunks) {
+      expect(typeof chunk.chunk_index).toBe("number");
+      expect(typeof chunk.content).toBe("string");
+      expect(chunk.content.length).toBeGreaterThan(0);
+    }
+
+    // Verify chunks are sorted by chunk_index
+    for (let i = 1; i < chunks.length; i++) {
+      expect(chunks[i].chunk_index).toBeGreaterThanOrEqual(chunks[i - 1].chunk_index);
+    }
+  });
+
+  test("Get chunks for nonexistent document returns 404", async () => {
+    const resp = await client.getDocumentChunks("nonexistent-doc-id");
+    expect(resp.status()).toBe(404);
+  });
+
   test("Upload without auth returns 401", async ({ request }) => {
     const resp = await request.post(`${BACKEND_URL}/documents/upload`, {
       multipart: {

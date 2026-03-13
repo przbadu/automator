@@ -149,6 +149,12 @@ export class ApiClient {
     });
   }
 
+  async getDocumentChunks(id: string) {
+    return this.request.get(`${BACKEND_URL}/documents/${id}/chunks`, {
+      headers: this.headers(),
+    });
+  }
+
   async deleteDocument(id: string) {
     return this.request.delete(`${BACKEND_URL}/documents/${id}`, {
       headers: this.headers(),

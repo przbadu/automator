@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import type { Message, SourceCitation } from "@/types"
+import type { Message, SourceCitation, SubAgentActivity } from "@/types"
 import { MessageBubble } from "./MessageBubble"
 import { StreamingMessage } from "./StreamingMessage"
 import { ThinkingIndicator } from "./ThinkingIndicator"
@@ -9,9 +9,10 @@ interface MessageListProps {
   streamingContent: string
   streamingSources?: SourceCitation[]
   isWaiting?: boolean
+  subAgentActivity?: SubAgentActivity | null
 }
 
-export function MessageList({ messages, streamingContent, streamingSources, isWaiting }: MessageListProps) {
+export function MessageList({ messages, streamingContent, streamingSources, isWaiting, subAgentActivity }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -23,7 +24,9 @@ export function MessageList({ messages, streamingContent, streamingSources, isWa
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, streamingContent, isWaiting])
+  }, [messages, streamingContent, isWaiting, subAgentActivity])
+
+  const showStreaming = streamingContent || (subAgentActivity && subAgentActivity.started)
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
@@ -31,8 +34,8 @@ export function MessageList({ messages, streamingContent, streamingSources, isWa
         {messages.map((msg) => (
           <MessageBubble key={msg.id} role={msg.role} content={msg.content} metadata={msg.metadata} />
         ))}
-        {isWaiting && <ThinkingIndicator />}
-        {streamingContent && <StreamingMessage content={streamingContent} sources={streamingSources} />}
+        {isWaiting && !subAgentActivity && <ThinkingIndicator />}
+        {showStreaming && <StreamingMessage content={streamingContent} sources={streamingSources} subAgentActivity={subAgentActivity} />}
         <div ref={bottomRef} />
       </div>
     </div>

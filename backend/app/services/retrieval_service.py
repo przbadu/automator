@@ -20,6 +20,7 @@ class RetrievalResult:
     chunk_index: int
     distance: float
     document_type: str | None = None
+    document_id: str = ""
     relevance_score: float = 0.0
 
 
@@ -78,6 +79,7 @@ def _vector_search(
             "chunk_index": meta.get("chunk_index", 0),
             "distance": dist,
             "document_type": meta.get("document_type"),
+            "document_id": meta.get("document_id", ""),
         })
 
     get_client().update_current_span(
@@ -140,6 +142,7 @@ async def retrieve_relevant_chunks(
                 chunk_index=r["chunk_index"],
                 distance=r["distance"],
                 document_type=r.get("document_type"),
+                document_id=r.get("document_id", ""),
                 relevance_score=round(1.0 - r["distance"], 4),
             )
             for r in vector_results[:top_k]
@@ -181,6 +184,7 @@ async def retrieve_relevant_chunks(
                     chunk_index=f.chunk_index,
                     distance=1.0 - score,
                     document_type=f.document_type,
+                    document_id=f.document_id,
                     relevance_score=round(score, 4),
                 ))
 
@@ -193,6 +197,7 @@ async def retrieve_relevant_chunks(
                 chunk_index=f.chunk_index,
                 distance=1.0 - f.rrf_score,
                 document_type=f.document_type,
+                document_id=f.document_id,
                 relevance_score=round(f.rrf_score, 4),
             )
             for f in fused[:final_k]

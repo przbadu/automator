@@ -114,4 +114,17 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 11: SSE parser fixture updated for `sourcesEvent`
 - [x] Task 12: LLM tests — SSE sources event, historical sources, contextualized follow-ups (3 tests)
 - [x] Task 13: Update PROGRESS.md
-- [ ] Regression suite: pending (API: 66/66, UI: needs frontend server, LLM: needs LLM)
+- [x] Regression suite: 97/97 pass (API + UI)
+
+### Module 8: Sub-Agents
+- [x] Task 1: Configuration — `sub_agent_enabled`, `sub_agent_max_iterations`, `sub_agent_max_chunks_per_read`
+- [x] Task 2: Sub-Agent Tool Definitions — `read_document_chunks`, `search_within_document`, `get_document_info`
+- [x] Task 3: Intent Classification Service — LLM-based routing to sub-agent or normal RAG
+- [x] Task 4: Sub-Agent Service — Tool-calling loop with OpenAI + Anthropic + fallback paths
+- [x] Task 5: Integrate Sub-Agent into Chat Router — intent gate + sub-agent branch in SSE generator
+- [x] Task 6: Frontend Types & SSE Handler — `SubAgentActivity`, new SSE event types
+- [x] Task 7: Sub-Agent Activity UI Component — collapsible panel with tool call visualization
+- [x] Task 8: Integrate Sub-Agent Activity into Chat Components — ChatLayout, MessageList, StreamingMessage, MessageBubble
+- [x] Task 9: Langfuse Observability — `@observe()` on all new services and tools
+- [x] Task 10: Tests — LLM tests (5) + UI tests (2) + SSE fixture extension
+- [x] Task 11: Update PROGRESS.md & Regression — 97/97 fast tests pass

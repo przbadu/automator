@@ -19,6 +19,7 @@ class SourceCitation(BaseModel):
     preview: str
     relevance_score: float
     document_type: str | None = None
+    document_id: str = ""
 
 
 class MessageMetadata(BaseModel):

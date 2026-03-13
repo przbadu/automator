@@ -21,6 +21,7 @@ class BM25Result:
     chunk_index: int
     bm25_score: float
     document_type: str | None = None
+    document_id: str = ""
 
 
 def _tokenize(text: str) -> list[str]:
@@ -50,6 +51,7 @@ def _build_index(user_id: str) -> tuple[BM25Okapi, list[dict]]:
             "document_filename": meta.get("filename", "unknown"),
             "chunk_index": meta.get("chunk_index", 0),
             "document_type": meta.get("document_type"),
+            "document_id": meta.get("document_id", ""),
         })
 
     index = BM25Okapi(tokenized_corpus)
@@ -95,6 +97,7 @@ def keyword_search(
             chunk_index=doc["chunk_index"],
             bm25_score=score,
             document_type=doc["document_type"],
+            document_id=doc.get("document_id", ""),
         ))
 
     get_client().update_current_span(

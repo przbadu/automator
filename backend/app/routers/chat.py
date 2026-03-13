@@ -16,10 +16,12 @@ from app.models.chat import MessageCreate, MessageResponse, ThreadCreate, Thread
 from langfuse import get_client, observe
 
 from app.services.encryption_service import decrypt_value
+from app.services.intent_service import classify_intent
 from app.services.langfuse_service import create_openai_client, openai_client
 from app.services.llm_service import build_rag_system_message, generate_thread_title, get_thread_messages, stream_chat_completion
 from app.services.query_service import contextualize_query
 from app.services.retrieval_service import retrieve_relevant_chunks
+from app.services.sub_agent_service import run_sub_agent
 
 logger = logging.getLogger(__name__)
 
@@ -237,47 +239,109 @@ async def send_message(
         except Exception:
             logger.warning("Query contextualization failed, using original", exc_info=True)
 
-    # Retrieve relevant document context
+    # Intent classification for sub-agent routing
+    use_sub_agent = False
+    target_document_id = None
+    target_document_filename = None
+
+    if settings.sub_agent_enabled:
+        try:
+            doc_cursor = await db.execute(
+                "SELECT id, filename, chunk_count FROM documents WHERE user_id = ? AND status = 'completed'",
+                (current_user["id"],),
+            )
+            user_documents = [
+                {"id": r[0], "filename": r[1], "chunk_count": r[2]}
+                for r in await doc_cursor.fetchall()
+            ]
+            intent = await classify_intent(
+                user_message=req.content,
+                user_documents=user_documents,
+                chat_history=messages,
+                client=llm_client,
+                model=llm_model,
+                provider=llm_provider,
+            )
+            if intent.needs_sub_agent and intent.target_document_id:
+                use_sub_agent = True
+                target_document_id = intent.target_document_id
+                target_document_filename = intent.target_document_filename
+                logger.info(
+                    "Sub-agent activated for document %s (%s)",
+                    target_document_filename,
+                    target_document_id,
+                )
+        except Exception:
+            logger.warning("Intent classification failed, using normal pipeline", exc_info=True)
+
+    # Retrieve relevant document context (skip if sub-agent will handle it)
     system_message = None
     sources: list[dict] = []
-    try:
-        retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
-        if retrieval_results:
-            context_chunks = [
-                {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
-                for r in retrieval_results
-            ]
-            system_message = build_rag_system_message(context_chunks)
-            sources = [
-                {
-                    "filename": r.document_filename,
-                    "chunk_index": r.chunk_index,
-                    "preview": r.chunk_content[:200],
-                    "relevance_score": round(r.relevance_score, 3),
-                    "document_type": r.document_type,
-                }
-                for r in retrieval_results
-            ]
-    except Exception:
-        logger.warning("Retrieval failed, proceeding without context", exc_info=True)
+    if not use_sub_agent:
+        try:
+            retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
+            if retrieval_results:
+                context_chunks = [
+                    {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
+                    for r in retrieval_results
+                ]
+                system_message = build_rag_system_message(context_chunks)
+                sources = [
+                    {
+                        "filename": r.document_filename,
+                        "chunk_index": r.chunk_index,
+                        "preview": r.chunk_content[:200],
+                        "relevance_score": round(r.relevance_score, 3),
+                        "document_type": r.document_type,
+                        "document_id": r.document_id,
+                    }
+                    for r in retrieval_results
+                ]
+        except Exception:
+            logger.warning("Retrieval failed, proceeding without context", exc_info=True)
 
     # Register stop signal for this thread
     stop_event = asyncio.Event()
     _active_streams[thread_id] = stop_event
 
-    metadata_json = json.dumps({"sources": sources}) if sources else "{}"
+    if use_sub_agent:
+        metadata_json = json.dumps({
+            "sub_agent": True,
+            "target_document": target_document_filename,
+            "sources": [],
+        })
+    else:
+        metadata_json = json.dumps({"sources": sources}) if sources else "{}"
 
     async def event_generator():
         assistant_content = ""
         stopped = False
         try:
-            # Emit sources before streaming starts
-            if sources:
-                yield {"data": json.dumps({"type": "sources", "sources": sources})}
+            if use_sub_agent:
+                # Sub-agent path
+                async for event in run_sub_agent(
+                    user_message=req.content,
+                    document_id=target_document_id,
+                    document_filename=target_document_filename,
+                    user_id=current_user["id"],
+                    chat_history=messages,
+                    client=llm_client,
+                    model=llm_model,
+                    provider=llm_provider,
+                    stop_event=stop_event,
+                    db=db,
+                ):
+                    if event["type"] == "delta":
+                        assistant_content += event.get("content", "")
+                    yield {"data": json.dumps(event)}
+            else:
+                # Normal RAG path
+                if sources:
+                    yield {"data": json.dumps({"type": "sources", "sources": sources})}
 
-            async for delta in stream_chat_completion(messages, stop_event=stop_event, system_message=system_message, client=llm_client, model=llm_model, provider=llm_provider):
-                assistant_content += delta
-                yield {"data": json.dumps({"type": "delta", "content": delta})}
+                async for delta in stream_chat_completion(messages, stop_event=stop_event, system_message=system_message, client=llm_client, model=llm_model, provider=llm_provider):
+                    assistant_content += delta
+                    yield {"data": json.dumps({"type": "delta", "content": delta})}
 
             stopped = stop_event.is_set()
             if stopped:

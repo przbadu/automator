@@ -64,4 +64,10 @@ export async function fetchWithAuth(
   return res
 }
 
+export async function fetchDocumentChunks(documentId: string): Promise<import("@/types").ChunkData[]> {
+  const res = await fetchWithAuth(`/documents/${documentId}/chunks`)
+  if (!res.ok) throw new Error(`Failed to fetch chunks: ${res.status}`)
+  return res.json()
+}
+
 export { API_URL, getTokens, setTokens, clearTokens }

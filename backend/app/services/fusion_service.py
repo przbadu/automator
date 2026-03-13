@@ -11,6 +11,7 @@ class FusedResult:
     chunk_index: int
     rrf_score: float
     document_type: str | None = None
+    document_id: str = ""
     vector_rank: int | None = None
     keyword_rank: int | None = None
 
@@ -51,6 +52,7 @@ def reciprocal_rank_fusion(
                 "document_filename": result.document_filename,
                 "chunk_index": result.chunk_index,
                 "document_type": result.document_type,
+                "document_id": result.document_id,
             }
 
     # Build fused results sorted by descending RRF score
@@ -63,6 +65,7 @@ def reciprocal_rank_fusion(
             chunk_index=data["chunk_index"],
             rrf_score=rrf_scores[cid],
             document_type=data.get("document_type"),
+            document_id=data.get("document_id", ""),
             vector_rank=vector_ranks.get(cid),
             keyword_rank=keyword_ranks.get(cid),
         ))

@@ -24,10 +24,36 @@ export interface SourceCitation {
   preview: string
   relevance_score: number
   document_type: string | null
+  document_id: string
+}
+
+export interface ChunkData {
+  chunk_index: number
+  content: string
+}
+
+export interface SubAgentToolCall {
+  tool: string
+  args: Record<string, unknown>
+}
+
+export interface SubAgentToolResult {
+  tool: string
+  summary: string
+}
+
+export interface SubAgentActivity {
+  started: boolean
+  document: string | null
+  toolCalls: SubAgentToolCall[]
+  toolResults: SubAgentToolResult[]
+  completed: boolean
 }
 
 export interface MessageMetadata {
   sources: SourceCitation[]
+  sub_agent?: boolean
+  target_document?: string
 }
 
 export interface Message {

@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     reranker_model: str = ""
     reranker_top_n: int = 5
 
+    # Sub-agent
+    sub_agent_enabled: bool = True
+    sub_agent_max_iterations: int = 5
+    sub_agent_max_chunks_per_read: int = 20
+
     # Encryption
     encryption_key: str = ""
 

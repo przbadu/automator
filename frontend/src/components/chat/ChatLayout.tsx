@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
-import type { SourceCitation, User } from "@/types"
+import type { SourceCitation, SubAgentActivity, User } from "@/types"
 import { useChat } from "@/hooks/useChat"
 import { useSSE } from "@/hooks/useSSE"
+import type { SSEEvent } from "@/hooks/useSSE"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { ThreadList } from "./ThreadList"
 import { MessageList } from "./MessageList"
@@ -30,6 +31,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
   const [streamingContent, setStreamingContent] = useState("")
   const [isWaiting, setIsWaiting] = useState(false)
   const [streamingSources, setStreamingSources] = useState<SourceCitation[]>([])
+  const [subAgentActivity, setSubAgentActivity] = useState<SubAgentActivity | null>(null)
 
   useEffect(() => {
     loadThreads()
@@ -57,6 +59,48 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
       setStreamingContent("")
       setIsWaiting(true)
       setStreamingSources([])
+      setSubAgentActivity(null)
+
+      const handleSubAgentEvent = (event: SSEEvent) => {
+        if (event.type === "sub_agent_start") {
+          setIsWaiting(false)
+          setSubAgentActivity({
+            started: true,
+            document: event.document || null,
+            toolCalls: [],
+            toolResults: [],
+            completed: false,
+          })
+        } else if (event.type === "sub_agent_tool_call") {
+          setSubAgentActivity((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  toolCalls: [
+                    ...prev.toolCalls,
+                    { tool: event.tool || "", args: event.args || {} },
+                  ],
+                }
+              : prev,
+          )
+        } else if (event.type === "sub_agent_tool_result") {
+          setSubAgentActivity((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  toolResults: [
+                    ...prev.toolResults,
+                    { tool: event.tool || "", summary: event.summary || "" },
+                  ],
+                }
+              : prev,
+          )
+        } else if (event.type === "sub_agent_end") {
+          setSubAgentActivity((prev) =>
+            prev ? { ...prev, completed: true } : prev,
+          )
+        }
+      }
 
       await streamMessage(
         thread.id,
@@ -69,6 +113,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
           setStreamingContent("")
           setIsWaiting(false)
           setStreamingSources([])
+          setSubAgentActivity(null)
 
           // Update thread title if generated
           if (threadTitle && thread) {
@@ -92,6 +137,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
         (sources) => {
           setStreamingSources(sources)
         },
+        handleSubAgentEvent,
       )
     },
     [currentThread, createThread, user.id, setMessages, streamMessage, loadThreads, updateThreadTitle],
@@ -126,6 +172,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
               streamingContent={streamingContent}
               streamingSources={streamingSources}
               isWaiting={isWaiting}
+              subAgentActivity={subAgentActivity}
             />
 
             {/* Input - fixed at bottom */}

@@ -1,6 +1,8 @@
 import { useState } from "react"
 import type { SourceCitation } from "@/types"
 import { cn } from "@/lib/utils"
+import { ChunkViewerDialog } from "./ChunkViewerDialog"
+import { Eye } from "lucide-react"
 
 interface SourceCitationsProps {
   sources: SourceCitation[]
@@ -14,8 +16,16 @@ function relevanceColor(score: number): string {
 
 export function SourceCitations({ sources }: SourceCitationsProps) {
   const [open, setOpen] = useState(false)
+  const [viewerOpen, setViewerOpen] = useState(false)
+  const [selectedSource, setSelectedSource] = useState<SourceCitation | null>(null)
 
   if (!sources.length) return null
+
+  const handleSourceClick = (source: SourceCitation) => {
+    if (!source.document_id) return
+    setSelectedSource(source)
+    setViewerOpen(true)
+  }
 
   return (
     <div className="mt-1.5 rounded-md border border-border/50 bg-background/50 text-xs">
@@ -39,9 +49,19 @@ export function SourceCitations({ sources }: SourceCitationsProps) {
       {open && (
         <div className="border-t border-border/50 px-3 py-2 space-y-2">
           {sources.map((source, i) => (
-            <div key={`${source.filename}-${source.chunk_index}-${i}`} className="space-y-0.5">
+            <div
+              key={`${source.filename}-${source.chunk_index}-${i}`}
+              className={cn(
+                "space-y-0.5 rounded px-2 py-1.5 -mx-2 transition-colors",
+                source.document_id && "cursor-pointer hover:bg-muted/50"
+              )}
+              onClick={() => handleSourceClick(source)}
+            >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-foreground truncate">
+                <span className="font-medium text-foreground truncate flex items-center gap-1.5">
+                  {source.document_id && (
+                    <Eye className="h-3 w-3 text-muted-foreground shrink-0" />
+                  )}
                   {source.filename}
                   <span className="text-muted-foreground font-normal"> (chunk {source.chunk_index})</span>
                 </span>
@@ -57,6 +77,16 @@ export function SourceCitations({ sources }: SourceCitationsProps) {
             </div>
           ))}
         </div>
+      )}
+
+      {selectedSource && (
+        <ChunkViewerDialog
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          documentId={selectedSource.document_id}
+          initialChunkIndex={selectedSource.chunk_index}
+          filename={selectedSource.filename}
+        />
       )}
     </div>
   )
