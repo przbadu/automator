@@ -16,10 +16,13 @@ async def generate_embeddings(texts: list[str]) -> list[list[float]]:
 
     for i in range(0, len(texts), BATCH_SIZE):
         batch = texts[i : i + BATCH_SIZE]
-        response = await _client.embeddings.create(
-            input=batch,
-            model=settings.embedding_model,
-        )
+        kwargs: dict = {
+            "input": batch,
+            "model": settings.embedding_model,
+        }
+        if settings.embedding_dimensions:
+            kwargs["dimensions"] = settings.embedding_dimensions
+        response = await _client.embeddings.create(**kwargs)
         batch_embeddings = [item.embedding for item in response.data]
         all_embeddings.extend(batch_embeddings)
 

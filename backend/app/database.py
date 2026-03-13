@@ -89,6 +89,37 @@ async def init_db() -> None:
         except Exception:
             pass  # Column already exists
 
+        # Update CHECK constraint to include 'extracting_metadata' status (idempotent)
+        # SQLite doesn't support ALTER CHECK, so we recreate the table
+        row = await db.execute_fetchall(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='documents'"
+        )
+        if row and "extracting_metadata" not in row[0][0]:
+            await db.executescript("""
+                ALTER TABLE documents RENAME TO documents_old;
+                CREATE TABLE documents (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    filename TEXT NOT NULL,
+                    file_size INTEGER NOT NULL,
+                    mime_type TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending', 'processing', 'chunking', 'extracting_metadata', 'embedding', 'completed', 'failed')),
+                    chunk_count INTEGER NOT NULL DEFAULT 0,
+                    error_message TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    content_hash TEXT,
+                    metadata TEXT DEFAULT '{}'
+                );
+                INSERT INTO documents SELECT * FROM documents_old;
+                DROP TABLE documents_old;
+                CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
+                CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status);
+                CREATE INDEX IF NOT EXISTS idx_documents_user_content_hash ON documents(user_id, content_hash);
+                CREATE INDEX IF NOT EXISTS idx_documents_user_filename ON documents(user_id, filename);
+            """)
+
         await db.commit()
     finally:
         await db.close()

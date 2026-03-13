@@ -111,10 +111,8 @@ async def _resolve_llm_client(user_id: str, db: aiosqlite.Connection):
             client = create_openai_client(api_key, api_url)
         return client, model, provider
 
-    if settings.llm_api_key:
-        return openai_client, settings.llm_model, "openai"
-
-    return None, None, None
+    # Fall back to global env-based client (works for Ollama/local LLMs without API key)
+    return openai_client, settings.llm_model, "openai"
 
 
 async def extract_metadata(
@@ -160,15 +158,21 @@ async def extract_metadata(
             )
             raw_text = response.content[0].text
         else:
-            response = await client.chat.completions.create(
-                model=model,
-                messages=[
+            kwargs = {
+                "model": model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                max_tokens=1024,
-                response_format={"type": "json_object"},
-            )
+                "max_tokens": 1024,
+            }
+            try:
+                response = await client.chat.completions.create(
+                    **kwargs, response_format={"type": "json_object"},
+                )
+            except Exception:
+                # Fallback: some models don't support response_format
+                response = await client.chat.completions.create(**kwargs)
             raw_text = response.choices[0].message.content
 
         # Parse JSON from response
@@ -187,5 +191,5 @@ async def extract_metadata(
         return validated.model_dump()
 
     except Exception:
-        logger.warning("Metadata extraction failed for '%s'", filename, exc_info=True)
+        logger.error("Metadata extraction failed for '%s'", filename, exc_info=True)
         return None

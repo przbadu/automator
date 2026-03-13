@@ -97,18 +97,32 @@ export function useDocuments() {
               try {
                 const event = JSON.parse(line.slice(6))
                 if (event.type === "status_update" && event.status !== "skipped") {
-                  setDocuments((prev) =>
-                    prev.map((d) =>
-                      d.id === event.document_id
-                        ? {
-                            ...d,
-                            status: event.status,
-                            chunk_count: event.chunk_count ?? d.chunk_count,
-                            error_message: event.error_message ?? d.error_message,
-                          }
-                        : d,
-                    ),
-                  )
+                  // For terminal states, refetch the full document to get all fields (metadata, etc.)
+                  if (event.status === "completed" || event.status === "failed") {
+                    fetchWithAuth(`/documents/${event.document_id}`)
+                      .then((r) => r.ok ? r.json() : null)
+                      .then((doc) => {
+                        if (doc) {
+                          setDocuments((prev) =>
+                            prev.map((d) => (d.id === doc.id ? doc : d))
+                          )
+                        }
+                      })
+                      .catch(() => {})
+                  } else {
+                    setDocuments((prev) =>
+                      prev.map((d) =>
+                        d.id === event.document_id
+                          ? {
+                              ...d,
+                              status: event.status,
+                              chunk_count: event.chunk_count ?? d.chunk_count,
+                              error_message: event.error_message ?? d.error_message,
+                            }
+                          : d,
+                      ),
+                    )
+                  }
                 }
               } catch {
                 // ignore parse errors

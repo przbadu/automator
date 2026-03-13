@@ -22,6 +22,7 @@ async def _update_status(
     chunk_count: int = 0,
     error_message: str | None = None,
     progress: str = "",
+    metadata: dict | None = None,
 ) -> None:
     """Update document status in DB and broadcast via SSE."""
     now = datetime.now(timezone.utc).isoformat()
@@ -39,6 +40,8 @@ async def _update_status(
         event["chunk_count"] = chunk_count
     if error_message:
         event["error_message"] = error_message
+    if metadata:
+        event["metadata"] = metadata
     await publish(user_id, event)
 
 
@@ -140,6 +143,7 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
             db, doc_id, user_id, "completed",
             chunk_count=len(chunks),
             progress="Ingestion complete",
+            metadata=metadata,
         )
         logger.info("Document %s ingested: %d chunks", doc_id, len(chunks))
 
