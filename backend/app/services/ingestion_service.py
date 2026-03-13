@@ -91,6 +91,12 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
         ]
         documents = [c.content for c in chunks]
 
+        # Remove any existing chunks for this document (handles re-ingestion on update)
+        try:
+            collection.delete(where={"document_id": doc_id})
+        except Exception:
+            pass
+
         collection.upsert(
             ids=ids,
             embeddings=embeddings,

@@ -70,6 +70,19 @@ async def init_db() -> None:
             await db.executescript(sql)
 
         await db.commit()
+
+        # Add content_hash column (idempotent migration)
+        try:
+            await db.execute("ALTER TABLE documents ADD COLUMN content_hash TEXT")
+        except Exception:
+            pass  # Column already exists
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_documents_user_content_hash ON documents(user_id, content_hash)"
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_documents_user_filename ON documents(user_id, filename)"
+        )
+        await db.commit()
     finally:
         await db.close()
 

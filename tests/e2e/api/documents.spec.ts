@@ -132,6 +132,103 @@ test.describe("Documents API", () => {
     expect(resp.status()).toBe(404);
   });
 
+  test("Upload returns content_hash in response", async () => {
+    const resp = await client.uploadDocument(
+      "hash-test.txt",
+      "Content for hash test."
+    );
+    expect(resp.status()).toBe(201);
+    const doc = await resp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.content_hash).toBeTruthy();
+    expect(doc.content_hash).toHaveLength(64);
+  });
+
+  test("Upload duplicate content returns 200 with duplicate flag", async () => {
+    const content = "Exact duplicate content for dedup test.";
+    const resp1 = await client.uploadDocument("dedup-original.txt", content);
+    expect(resp1.status()).toBe(201);
+    const doc1 = await resp1.json();
+    createdDocIds.push(doc1.id);
+
+    const resp2 = await client.uploadDocument("dedup-original.txt", content);
+    expect(resp2.status()).toBe(200);
+    const doc2 = await resp2.json();
+    expect(doc2.duplicate).toBe(true);
+    expect(doc2.id).toBe(doc1.id);
+  });
+
+  test("Upload same content with different filename returns duplicate", async () => {
+    const content = "Same content different filename dedup test.";
+    const resp1 = await client.uploadDocument("dedup-name-a.txt", content);
+    expect(resp1.status()).toBe(201);
+    const doc1 = await resp1.json();
+    createdDocIds.push(doc1.id);
+
+    const resp2 = await client.uploadDocument("dedup-name-b.txt", content);
+    expect(resp2.status()).toBe(200);
+    const doc2 = await resp2.json();
+    expect(doc2.duplicate).toBe(true);
+  });
+
+  test("Upload same filename with different content returns updated", async () => {
+    const resp1 = await client.uploadDocument(
+      "update-test.txt",
+      "Original content v1."
+    );
+    expect(resp1.status()).toBe(201);
+    const doc1 = await resp1.json();
+    createdDocIds.push(doc1.id);
+
+    // Wait for ingestion to finish so it's not in a processing state
+    let status = doc1.status;
+    let attempts = 0;
+    while (status !== "completed" && status !== "failed" && attempts < 60) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const resp = await client.getDocument(doc1.id);
+      const doc = await resp.json();
+      status = doc.status;
+      attempts++;
+    }
+    // If status is still processing (no LLM available), skip this test
+    if (status !== "completed" && status !== "failed") {
+      test.skip();
+      return;
+    }
+
+    const resp2 = await client.uploadDocument(
+      "update-test.txt",
+      "Updated content v2 — different hash."
+    );
+    expect(resp2.status()).toBe(200);
+    const doc2 = await resp2.json();
+    expect(doc2.updated).toBe(true);
+    expect(doc2.id).toBe(doc1.id);
+    expect(doc2.content_hash).not.toBe(doc1.content_hash);
+  });
+
+  test("List and get endpoints include content_hash", async () => {
+    // Create a document to ensure there's at least one
+    const uploadResp = await client.uploadDocument(
+      "hash-field-test.txt",
+      "Content for hash field test."
+    );
+    const uploaded = await uploadResp.json();
+    createdDocIds.push(uploaded.id);
+
+    const listResp = await client.listDocuments();
+    const data = await listResp.json();
+    expect(data.documents.length).toBeGreaterThan(0);
+    const doc = data.documents.find((d: { id: string }) => d.id === uploaded.id);
+    expect(doc).toBeTruthy();
+    expect("content_hash" in doc).toBe(true);
+
+    const getResp = await client.getDocument(uploaded.id);
+    const fetched = await getResp.json();
+    expect("content_hash" in fetched).toBe(true);
+    expect(fetched.content_hash).toHaveLength(64);
+  });
+
   test("Upload without auth returns 401", async ({ request }) => {
     const resp = await request.post(`${BACKEND_URL}/documents/upload`, {
       multipart: {

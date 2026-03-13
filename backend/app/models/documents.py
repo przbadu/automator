@@ -10,6 +10,9 @@ class DocumentResponse(BaseModel):
     status: str
     chunk_count: int
     error_message: str | None
+    content_hash: str | None = None
+    duplicate: bool = False
+    updated: bool = False
     created_at: str
     updated_at: str
 
