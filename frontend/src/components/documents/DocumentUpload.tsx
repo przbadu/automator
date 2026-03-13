@@ -11,12 +11,18 @@ const variantStyles = {
   success: "text-green-600 bg-green-50 border-green-200",
   info: "text-blue-600 bg-blue-50 border-blue-200",
   warning: "text-yellow-700 bg-yellow-50 border-yellow-200",
+  error: "text-red-600 bg-red-50 border-red-200",
 } as const
+
+interface UploadMessage {
+  text: string
+  variant: "success" | "info" | "warning" | "error"
+}
 
 export function DocumentUpload({ onUpload, uploading }: Props) {
   const [dragOver, setDragOver] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [message, setMessage] = useState<{ text: string; variant: "success" | "info" | "warning" } | null>(null)
+  const [messages, setMessages] = useState<UploadMessage[]>([])
+  const [uploadingCount, setUploadingCount] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
 
@@ -26,19 +32,36 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
     }
   }, [])
 
-  const handleFile = useCallback(
-    async (file: File) => {
-      setError(null)
-      setMessage(null)
+  const handleFiles = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0) return
+      setMessages([])
       if (timerRef.current) clearTimeout(timerRef.current)
-      try {
-        const result = await onUpload(file)
-        if (result.message) {
-          setMessage({ text: result.message, variant: result.variant })
-          timerRef.current = setTimeout(() => setMessage(null), 5000)
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Upload failed")
+      setUploadingCount(files.length)
+
+      const results: UploadMessage[] = []
+
+      // Upload files concurrently
+      await Promise.allSettled(
+        files.map(async (file) => {
+          try {
+            const result = await onUpload(file)
+            if (result.message) {
+              results.push({ text: `${file.name}: ${result.message}`, variant: result.variant })
+            }
+          } catch (e) {
+            results.push({
+              text: `${file.name}: ${e instanceof Error ? e.message : "Upload failed"}`,
+              variant: "error",
+            })
+          }
+        }),
+      )
+
+      setUploadingCount(0)
+      if (results.length > 0) {
+        setMessages(results)
+        timerRef.current = setTimeout(() => setMessages([]), 5000)
       }
     },
     [onUpload],
@@ -48,20 +71,22 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
     (e: React.DragEvent) => {
       e.preventDefault()
       setDragOver(false)
-      const file = e.dataTransfer.files[0]
-      if (file) handleFile(file)
+      const files = Array.from(e.dataTransfer.files)
+      if (files.length > 0) handleFiles(files)
     },
-    [handleFile],
+    [handleFiles],
   )
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (file) handleFile(file)
+      const files = Array.from(e.target.files || [])
+      if (files.length > 0) handleFiles(files)
       if (inputRef.current) inputRef.current.value = ""
     },
-    [handleFile],
+    [handleFiles],
   )
+
+  const isUploading = uploading || uploadingCount > 0
 
   return (
     <div className="p-4">
@@ -77,15 +102,17 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
         }`}
       >
         <p className="text-sm text-muted-foreground mb-2">
-          {uploading ? "Uploading..." : "Drag & drop a file here, or click to browse"}
+          {isUploading
+            ? `Uploading${uploadingCount > 1 ? ` ${uploadingCount} files` : ""}...`
+            : "Drag & drop files here, or click to browse"}
         </p>
         <p className="text-xs text-muted-foreground/60 mb-3">
-          Supported: .txt, .md
+          Supported: .txt, .md — multiple files allowed
         </p>
         <Button
           variant="outline"
           size="sm"
-          disabled={uploading}
+          disabled={isUploading}
           onClick={() => inputRef.current?.click()}
         >
           Browse files
@@ -94,17 +121,23 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
           ref={inputRef}
           type="file"
           accept=".txt,.md"
+          multiple
           className="hidden"
           onChange={handleChange}
         />
       </div>
-      {message && (
-        <p data-testid="upload-message" className={`text-sm mt-2 px-3 py-2 rounded border ${variantStyles[message.variant]}`}>
-          {message.text}
-        </p>
-      )}
-      {error && (
-        <p className="text-sm text-red-500 mt-2">{error}</p>
+      {messages.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {messages.map((msg, i) => (
+            <p
+              key={i}
+              data-testid="upload-message"
+              className={`text-sm px-3 py-2 rounded border ${variantStyles[msg.variant]}`}
+            >
+              {msg.text}
+            </p>
+          ))}
+        </div>
       )}
     </div>
   )

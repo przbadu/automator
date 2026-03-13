@@ -28,27 +28,31 @@ function MetadataDisplay({ metadata }: { metadata: Record<string, unknown> }) {
       <div className="flex items-center gap-1.5 flex-wrap">
         {docType && (
           <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-[10px] font-medium">
-            {docType}
+            <span className="opacity-60 mr-0.5">Type:</span> {docType}
           </span>
         )}
         {language && (
           <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-1.5 py-0.5 text-[10px] font-medium uppercase">
-            {language}
+            <span className="opacity-60 mr-0.5 normal-case">Lang:</span> {language}
           </span>
         )}
-        {topics && topics.length > 0 &&
-          topics.slice(0, 3).map((topic) => (
-            <span
-              key={topic}
-              className="inline-flex items-center rounded-full bg-sky-50 text-sky-700 px-1.5 py-0.5 text-[10px]"
-            >
-              {topic}
-            </span>
-          ))}
-        {topics && topics.length > 3 && (
-          <span className="text-[10px] text-muted-foreground">
-            +{topics.length - 3} more
-          </span>
+        {topics && topics.length > 0 && (
+          <>
+            <span className="text-[10px] text-muted-foreground">Topics:</span>
+            {topics.slice(0, 3).map((topic) => (
+              <span
+                key={topic}
+                className="inline-flex items-center rounded-full bg-sky-50 text-sky-700 px-1.5 py-0.5 text-[10px]"
+              >
+                {topic}
+              </span>
+            ))}
+            {topics.length > 3 && (
+              <span className="text-[10px] text-muted-foreground">
+                +{topics.length - 3} more
+              </span>
+            )}
+          </>
         )}
         <button
           onClick={() => setExpanded(!expanded)}
@@ -60,7 +64,12 @@ function MetadataDisplay({ metadata }: { metadata: Record<string, unknown> }) {
 
       {expanded && (
         <div className="mt-2 space-y-1.5 text-xs text-muted-foreground border-l-2 border-muted pl-3">
-          {summary && <p>{summary}</p>}
+          {summary && (
+            <p>
+              <span className="font-medium text-foreground">Summary: </span>
+              {summary}
+            </p>
+          )}
           {keyEntities && keyEntities.length > 0 && (
             <p>
               <span className="font-medium text-foreground">Entities: </span>

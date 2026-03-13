@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS documents (
     file_size INTEGER NOT NULL,
     mime_type TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'processing', 'chunking', 'embedding', 'completed', 'failed')),
+        CHECK (status IN ('pending', 'processing', 'chunking', 'extracting_metadata', 'embedding', 'completed', 'failed')),
     chunk_count INTEGER NOT NULL DEFAULT 0,
     error_message TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),

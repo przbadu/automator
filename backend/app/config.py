@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     embedding_base_url: str = "http://localhost:11434/v1"
     embedding_api_key: str = ""
     embedding_model: str = "nomic-embed-text"
-    embedding_dimensions: int = 768
+    embedding_dimensions: int | None = None
 
     # Document ingestion
     chunk_size: int = 512
