@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import type { User } from "@/types"
+import type { SourceCitation, User } from "@/types"
 import { useChat } from "@/hooks/useChat"
 import { useSSE } from "@/hooks/useSSE"
 import { AppSidebar } from "@/components/layout/AppSidebar"
@@ -29,6 +29,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
   const { streaming, streamMessage, stop } = useSSE()
   const [streamingContent, setStreamingContent] = useState("")
   const [isWaiting, setIsWaiting] = useState(false)
+  const [streamingSources, setStreamingSources] = useState<SourceCitation[]>([])
 
   useEffect(() => {
     loadThreads()
@@ -49,12 +50,13 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
         user_id: user.id,
         role: "user" as const,
         content,
-        metadata: "{}",
+        metadata: null,
         created_at: new Date().toISOString(),
       }
       setMessages((prev) => [...prev, tempUserMsg])
       setStreamingContent("")
       setIsWaiting(true)
+      setStreamingSources([])
 
       await streamMessage(
         thread.id,
@@ -66,6 +68,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
         async (_messageId, threadTitle, stopped) => {
           setStreamingContent("")
           setIsWaiting(false)
+          setStreamingSources([])
 
           // Update thread title if generated
           if (threadTitle && thread) {
@@ -85,6 +88,9 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
             setMessages(await res.json())
           }
           loadThreads()
+        },
+        (sources) => {
+          setStreamingSources(sources)
         },
       )
     },
@@ -118,6 +124,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
             <MessageList
               messages={messages}
               streamingContent={streamingContent}
+              streamingSources={streamingSources}
               isWaiting={isWaiting}
             />
 

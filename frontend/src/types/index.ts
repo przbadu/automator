@@ -18,13 +18,25 @@ export interface Thread {
   updated_at: string
 }
 
+export interface SourceCitation {
+  filename: string
+  chunk_index: number
+  preview: string
+  relevance_score: number
+  document_type: string | null
+}
+
+export interface MessageMetadata {
+  sources: SourceCitation[]
+}
+
 export interface Message {
   id: string
   thread_id: string
   user_id: string
   role: "user" | "assistant"
   content: string
-  metadata: string
+  metadata: MessageMetadata | null
   created_at: string
 }
 

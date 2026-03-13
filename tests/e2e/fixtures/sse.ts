@@ -6,10 +6,12 @@ export function parseSSEResponse(body: string): {
   doneEvent: Record<string, unknown> | null;
   fullContent: string;
   errorEvent: Record<string, unknown> | null;
+  sourcesEvent: Record<string, unknown> | null;
 } {
   const deltas: string[] = [];
   let doneEvent: Record<string, unknown> | null = null;
   let errorEvent: Record<string, unknown> | null = null;
+  let sourcesEvent: Record<string, unknown> | null = null;
 
   for (const line of body.split("\n")) {
     if (!line.startsWith("data: ")) continue;
@@ -21,6 +23,8 @@ export function parseSSEResponse(body: string): {
         doneEvent = event;
       } else if (event.type === "error") {
         errorEvent = event;
+      } else if (event.type === "sources") {
+        sourcesEvent = event;
       }
     } catch {
       // ignore parse errors
@@ -32,5 +36,6 @@ export function parseSSEResponse(body: string): {
     doneEvent,
     fullContent: deltas.join(""),
     errorEvent,
+    sourcesEvent,
   };
 }

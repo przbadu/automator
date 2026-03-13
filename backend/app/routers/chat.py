@@ -13,14 +13,27 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.chat import MessageCreate, MessageResponse, ThreadCreate, ThreadResponse
+from langfuse import get_client, observe
+
 from app.services.encryption_service import decrypt_value
 from app.services.langfuse_service import create_openai_client, openai_client
 from app.services.llm_service import build_rag_system_message, generate_thread_title, get_thread_messages, stream_chat_completion
+from app.services.query_service import contextualize_query
 from app.services.retrieval_service import retrieve_relevant_chunks
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/threads", tags=["chat"])
+
+
+def _parse_message_metadata(raw: str | None) -> dict | None:
+    """Parse metadata JSON string into dict, returning None for empty/invalid."""
+    if not raw or raw == "{}":
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
 
 # Track active streams so they can be stopped via the /stop endpoint
 # Key: thread_id, Value: asyncio.Event (set = stop requested)
@@ -119,7 +132,7 @@ async def list_messages(
     return [
         MessageResponse(
             id=r[0], thread_id=r[1], user_id=r[2], role=r[3],
-            content=r[4], metadata=r[5], created_at=r[6],
+            content=r[4], metadata=_parse_message_metadata(r[5]), created_at=r[6],
         )
         for r in rows
     ]
@@ -139,6 +152,7 @@ async def stop_generation(
 
 
 @router.post("/{thread_id}/messages")
+@observe(name="chat_send_message")
 async def send_message(
     thread_id: str,
     req: MessageCreate,
@@ -197,16 +211,53 @@ async def send_message(
 
         return _ESR(_error_gen())
 
+    # Set Langfuse trace context for full pipeline visibility
+    get_client().update_current_span(
+        name="chat_message",
+        metadata={
+            "thread_id": thread_id,
+            "user_id": current_user["id"],
+            "llm_provider": llm_provider or "openai-compatible",
+            "llm_model": llm_model or settings.llm_model,
+        },
+    )
+
+    # Contextualize the query using conversation history
+    search_query = req.content
+    if len(messages) > 1:
+        try:
+            search_query = await contextualize_query(
+                user_message=req.content,
+                chat_history=messages[-6:-1],
+                client=llm_client,
+                model=llm_model,
+                provider=llm_provider,
+            )
+            logger.info("Contextualized query: %r -> %r", req.content, search_query)
+        except Exception:
+            logger.warning("Query contextualization failed, using original", exc_info=True)
+
     # Retrieve relevant document context
     system_message = None
+    sources: list[dict] = []
     try:
-        retrieval_results = await retrieve_relevant_chunks(req.content, current_user["id"])
+        retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
         if retrieval_results:
             context_chunks = [
                 {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
                 for r in retrieval_results
             ]
             system_message = build_rag_system_message(context_chunks)
+            sources = [
+                {
+                    "filename": r.document_filename,
+                    "chunk_index": r.chunk_index,
+                    "preview": r.chunk_content[:200],
+                    "relevance_score": round(r.relevance_score, 3),
+                    "document_type": r.document_type,
+                }
+                for r in retrieval_results
+            ]
     except Exception:
         logger.warning("Retrieval failed, proceeding without context", exc_info=True)
 
@@ -214,10 +265,16 @@ async def send_message(
     stop_event = asyncio.Event()
     _active_streams[thread_id] = stop_event
 
+    metadata_json = json.dumps({"sources": sources}) if sources else "{}"
+
     async def event_generator():
         assistant_content = ""
         stopped = False
         try:
+            # Emit sources before streaming starts
+            if sources:
+                yield {"data": json.dumps({"type": "sources", "sources": sources})}
+
             async for delta in stream_chat_completion(messages, stop_event=stop_event, system_message=system_message, client=llm_client, model=llm_model, provider=llm_provider):
                 assistant_content += delta
                 yield {"data": json.dumps({"type": "delta", "content": delta})}
@@ -226,13 +283,13 @@ async def send_message(
             if stopped:
                 logger.info("Stop requested for thread %s, saving partial response (%d chars)", thread_id, len(assistant_content))
 
-            # Save assistant message (full or partial)
+            # Save assistant message (full or partial) with citation metadata
             if assistant_content.strip():
                 assistant_msg_id = str(uuid.uuid4())
                 msg_now = datetime.now(timezone.utc).isoformat()
                 await db.execute(
-                    "INSERT INTO messages (id, thread_id, user_id, role, content, created_at) VALUES (?, ?, ?, 'assistant', ?, ?)",
-                    (assistant_msg_id, thread_id, current_user["id"], assistant_content, msg_now),
+                    "INSERT INTO messages (id, thread_id, user_id, role, content, metadata, created_at) VALUES (?, ?, ?, 'assistant', ?, ?, ?)",
+                    (assistant_msg_id, thread_id, current_user["id"], assistant_content, metadata_json, msg_now),
                 )
                 await db.execute(
                     "UPDATE threads SET updated_at = ? WHERE id = ?",

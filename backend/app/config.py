@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     retrieval_candidate_k: int = 20
     final_top_k: int = 5
 
+    # Relevance filtering (0.0 = disabled; only useful for vector-only mode, not hybrid/RRF)
+    retrieval_relevance_threshold: float = 0.0
+
     # Reranker (cross-encoder API — vLLM, Jina, Cohere, TEI compatible)
     reranker_base_url: str = ""
     reranker_model: str = ""

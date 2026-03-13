@@ -73,3 +73,45 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 6: npm test scripts (test, test:fast, test:api, test:ui, test:llm)
 - [x] Task 7: CLAUDE.md updated with testing instructions for future agents
 - [x] Full suite: 69/69 passing
+
+### Module 6: Hybrid Search & Reranking
+- [x] Task 1: Add `rank-bm25` dependency
+- [x] Task 2: Configuration settings (hybrid search + reranker)
+- [x] Task 3: BM25 keyword search service with per-user cache
+- [x] Task 4: Reciprocal Rank Fusion (RRF) merging
+- [x] Task 5: Cross-encoder reranker service (optional, via API)
+- [x] Task 6: Refactor retrieval service as hybrid orchestrator
+- [x] Task 7: Cache invalidation hooks (ingestion + deletion)
+- [x] Task 8: Update `.env.example` with new config vars
+- [x] Task 9: Hybrid search LLM integration tests (3 tests)
+- [x] Task 10: Update PROGRESS.md
+- [x] Regression suite: 89/89 passing (no regressions)
+
+### Module 6.1: Langfuse Retrieval Pipeline Observability
+- [x] Task 1: Add Langfuse client + embedding client wrapper to `langfuse_service.py`
+- [x] Task 2: Wrap embedding service with `@observe` + Langfuse-wrapped client
+- [x] Task 3: Trace vector search with `@observe` + metadata (result count, distances, collection size)
+- [x] Task 4: Trace BM25 keyword search with `@observe` + metadata (cache hit, corpus size, scores)
+- [x] Task 5: Trace RRF fusion with `@observe` + metadata (input/output counts, overlap, scores)
+- [x] Task 6: Trace reranker with `@observe` + metadata (model, scores, counts)
+- [x] Task 7: Trace full retrieval pipeline orchestrator with `@observe` (parent span)
+- [x] Task 8: Add trace context to chat router (top-level `chat_message` span)
+- [x] Task 9: Add `/debug/retrieval-config` endpoint
+- [x] Task 10: Tests for debug endpoint (4 tests)
+- [x] Task 11: Updated PROGRESS.md, all imports verified
+
+### Module 7: Conversation-Aware RAG & Source Citations
+- [x] Task 1: Query contextualization service (`query_service.py`)
+- [x] Task 2: Relevance threshold configuration (`retrieval_relevance_threshold`)
+- [x] Task 3: Relevance filtering in retrieval service + `relevance_score` field
+- [x] Task 4: Store citations in message metadata + SSE `sources` event
+- [x] Task 5: Wire query contextualization into chat router
+- [x] Task 6: Update message model (`SourceCitation`, `MessageMetadata`)
+- [x] Task 7: Frontend types update (`SourceCitation`, `MessageMetadata`, `Message`)
+- [x] Task 8: SSE handler — parse `sources` event in `useSSE`
+- [x] Task 9: Citations UI component (`SourceCitations.tsx`) — collapsible panel
+- [x] Task 10: Integrate citations into `MessageBubble`, `MessageList`, `StreamingMessage`
+- [x] Task 11: SSE parser fixture updated for `sourcesEvent`
+- [x] Task 12: LLM tests — SSE sources event, historical sources, contextualized follow-ups (3 tests)
+- [x] Task 13: Update PROGRESS.md
+- [ ] Regression suite: pending (API: 66/66, UI: needs frontend server, LLM: needs LLM)

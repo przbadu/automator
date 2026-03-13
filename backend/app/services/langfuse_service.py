@@ -1,5 +1,7 @@
 import os
 
+from langfuse import Langfuse
+
 from app.config import settings
 
 # Langfuse reads config from env vars
@@ -10,6 +12,15 @@ if settings.langfuse_public_key and settings.langfuse_secret_key:
 
 from langfuse.openai import AsyncOpenAI  # noqa: E402 — must import after env vars are set
 
+# Langfuse client for manual spans
+langfuse_client: Langfuse | None = None
+if settings.langfuse_public_key and settings.langfuse_secret_key:
+    langfuse_client = Langfuse(
+        public_key=settings.langfuse_public_key,
+        secret_key=settings.langfuse_secret_key,
+        host=settings.langfuse_host,
+    )
+
 # Default client from env vars (fallback)
 openai_client = AsyncOpenAI(
     api_key=settings.llm_api_key,
@@ -19,4 +30,9 @@ openai_client = AsyncOpenAI(
 
 def create_openai_client(api_key: str, base_url: str) -> AsyncOpenAI:
     """Create a Langfuse-wrapped OpenAI client with custom credentials."""
+    return AsyncOpenAI(api_key=api_key, base_url=base_url)
+
+
+def create_embedding_client(base_url: str, api_key: str) -> AsyncOpenAI:
+    """Create a Langfuse-wrapped OpenAI client for embeddings."""
     return AsyncOpenAI(api_key=api_key, base_url=base_url)

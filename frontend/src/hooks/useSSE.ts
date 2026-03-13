@@ -1,14 +1,17 @@
 import { useCallback, useRef, useState } from "react"
 import { getTokens } from "@/lib/api"
+import type { SourceCitation } from "@/types"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-interface SSEDelta {
-  type: "delta" | "done"
+interface SSEEvent {
+  type: "delta" | "done" | "sources" | "error"
   content?: string
   message_id?: string | null
   thread_title?: string | null
   stopped?: boolean
+  sources?: SourceCitation[]
+  message?: string
 }
 
 export function useSSE() {
@@ -22,6 +25,7 @@ export function useSSE() {
       content: string,
       onDelta: (text: string) => void,
       onDone: (messageId: string | null, threadTitle?: string | null, stopped?: boolean) => void,
+      onSources?: (sources: SourceCitation[]) => void,
     ) => {
       setStreaming(true)
       const controller = new AbortController()
@@ -59,8 +63,10 @@ export function useSSE() {
             const jsonStr = line.slice(6).trim()
             if (!jsonStr) continue
 
-            const data: SSEDelta = JSON.parse(jsonStr)
-            if (data.type === "delta" && data.content) {
+            const data: SSEEvent = JSON.parse(jsonStr)
+            if (data.type === "sources" && data.sources) {
+              onSources?.(data.sources)
+            } else if (data.type === "delta" && data.content) {
               onDelta(data.content)
             } else if (data.type === "done") {
               onDone(data.message_id ?? null, data.thread_title, data.stopped)

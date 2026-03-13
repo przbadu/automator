@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import type { Message } from "@/types"
+import type { Message, SourceCitation } from "@/types"
 import { MessageBubble } from "./MessageBubble"
 import { StreamingMessage } from "./StreamingMessage"
 import { ThinkingIndicator } from "./ThinkingIndicator"
@@ -7,10 +7,11 @@ import { ThinkingIndicator } from "./ThinkingIndicator"
 interface MessageListProps {
   messages: Message[]
   streamingContent: string
+  streamingSources?: SourceCitation[]
   isWaiting?: boolean
 }
 
-export function MessageList({ messages, streamingContent, isWaiting }: MessageListProps) {
+export function MessageList({ messages, streamingContent, streamingSources, isWaiting }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -28,10 +29,10 @@ export function MessageList({ messages, streamingContent, isWaiting }: MessageLi
     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
       <div className="space-y-4 max-w-3xl mx-auto">
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
+          <MessageBubble key={msg.id} role={msg.role} content={msg.content} metadata={msg.metadata} />
         ))}
         {isWaiting && <ThinkingIndicator />}
-        {streamingContent && <StreamingMessage content={streamingContent} />}
+        {streamingContent && <StreamingMessage content={streamingContent} sources={streamingSources} />}
         <div ref={bottomRef} />
       </div>
     </div>

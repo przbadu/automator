@@ -23,6 +23,15 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 - Module 2+ uses stateless completions - store and send chat history yourself
 - Ingestion is manual file upload only - no connectors or automated pipelines
 
+## Observability (Langfuse)
+- **Every new backend service or pipeline step MUST have Langfuse tracing** — use `@observe(name="descriptive_name")` from `langfuse.decorators`
+- Use `langfuse_context.update_current_observation(metadata={...})` to attach structured metrics (counts, scores, config values)
+- For any new OpenAI-compatible API call (embeddings, completions), use the Langfuse-wrapped client from `langfuse_service.py` — NOT raw `openai.AsyncOpenAI`
+- Anthropic calls are NOT auto-traced by Langfuse — add manual `@observe()` spans
+- Keep metadata lightweight: counts, scores, model names, config — never log full embedding vectors or large chunk texts
+- Traces should nest naturally: parent `@observe` functions automatically contain child `@observe` calls
+- See `backend/app/services/langfuse_service.py` for the Langfuse client and wrapped OpenAI client
+
 ## Planning
 - Save all plans to `.agent/plans/` folder
 - Naming convention: `{sequence}.{plan-name}.md` (e.g., `1.auth-setup.md`, `2.document-ingestion.md`)
