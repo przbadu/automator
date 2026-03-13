@@ -128,3 +128,17 @@ Track your progress through the masterclass. Update this file as you complete mo
 - [x] Task 9: Langfuse Observability — `@observe()` on all new services and tools
 - [x] Task 10: Tests — LLM tests (5) + UI tests (2) + SSE fixture extension
 - [x] Task 11: Update PROGRESS.md & Regression — 97/97 fast tests pass
+
+### Module 7.1: Additional Tools (Text-to-SQL + Web Search)
+- [x] Task 1: Configuration — `text_to_sql_*` and `web_search_*` settings in config.py
+- [x] Task 2: Text-to-SQL Tool — `sql_tool.py` with validation, parameterized execution, Langfuse tracing
+- [x] Task 3: Web Search Tool — `web_search_tool.py` with SearXNG/Tavily/Brave providers
+- [x] Task 4: Register New Tools — dynamic `get_tool_definitions()` + dispatch in `execute_tool()`
+- [x] Task 5: Generalize Sub-Agent Service — optional document params, dynamic system prompt, dynamic tools
+- [x] Task 6: Expand Intent Classification — tool-based categories (SQL/web), conditional prompt sections
+- [x] Task 7: Update Chat Router — remove `target_document_id` gate for sub-agent activation
+- [x] Task 8: Frontend Updates — `mode` field in types/SSE/SubAgentActivity, tool-specific display labels
+- [x] Task 9: Langfuse Observability — `@observe()` on sql_tool and web_search_tool
+- [x] Task 10: E2E Tests — text-to-sql tests (3) + web-search tests (2, conditional)
+- [x] Task 11: Update .env.example + PROGRESS.md
+- [x] Regression suite: 97/97 fast tests pass (no regressions)

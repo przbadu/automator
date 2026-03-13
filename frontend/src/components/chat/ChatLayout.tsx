@@ -67,6 +67,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
           setSubAgentActivity({
             started: true,
             document: event.document || null,
+            mode: event.mode || null,
             toolCalls: [],
             toolResults: [],
             completed: false,

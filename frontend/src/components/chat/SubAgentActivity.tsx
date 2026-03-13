@@ -22,6 +22,16 @@ export function SubAgentActivity({ activity, defaultCollapsed }: SubAgentActivit
   const isWorking = activity.started && !activity.completed &&
     activity.toolCalls.length > activity.toolResults.length
 
+  const statusLabel = (() => {
+    if (activity.document) {
+      return activity.completed ? "Analyzed" : "Analyzing"
+    }
+    if (activity.mode === "tools") {
+      return activity.completed ? "Used tools" : "Using tools"
+    }
+    return activity.completed ? "Done" : "Working"
+  })()
+
   return (
     <div className="mt-1.5 mb-1.5 rounded-md border border-border/50 bg-background/50 text-xs">
       <button
@@ -40,9 +50,9 @@ export function SubAgentActivity({ activity, defaultCollapsed }: SubAgentActivit
         </svg>
         <span className="flex items-center gap-1.5">
           {activity.completed ? (
-            <span className="text-green-600 dark:text-green-400">Analyzed</span>
+            <span className="text-green-600 dark:text-green-400">{statusLabel}</span>
           ) : (
-            <span className="text-blue-600 dark:text-blue-400">Analyzing</span>
+            <span className="text-blue-600 dark:text-blue-400">{statusLabel}</span>
           )}
           {activity.document && (
             <span className="font-medium text-foreground">{activity.document}</span>
@@ -68,7 +78,11 @@ export function SubAgentActivity({ activity, defaultCollapsed }: SubAgentActivit
                     {i + 1}.
                   </span>
                   <span className="font-medium text-foreground">
-                    {call.tool.replace(/_/g, " ")}
+                    {call.tool === "query_database"
+                      ? "Querying database"
+                      : call.tool === "web_search"
+                        ? "Searching the web"
+                        : call.tool.replace(/_/g, " ")}
                   </span>
                   {call.args && Object.keys(call.args).length > 0 && (
                     <span className="text-muted-foreground truncate">

@@ -14,6 +14,7 @@ export interface SSEEvent {
   message?: string
   // Sub-agent fields
   document?: string
+  mode?: "document_analysis" | "tools" | null
   tool?: string
   args?: Record<string, unknown>
   summary?: string

@@ -45,6 +45,7 @@ export interface SubAgentToolResult {
 export interface SubAgentActivity {
   started: boolean
   document: string | null
+  mode: "document_analysis" | "tools" | null
   toolCalls: SubAgentToolCall[]
   toolResults: SubAgentToolResult[]
   completed: boolean

@@ -4,6 +4,7 @@
 export interface SubAgentEvent {
   type: string;
   document?: string;
+  mode?: "document_analysis" | "tools" | null;
   tool?: string;
   args?: Record<string, unknown>;
   summary?: string;
