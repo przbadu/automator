@@ -11,9 +11,8 @@ from langfuse import get_client, observe
 from app.config import settings
 from app.services.langfuse_service import openai_client
 from app.services.sub_agent_tools import (
-    ANTHROPIC_TOOL_DEFINITIONS,
-    TOOL_DEFINITIONS,
     execute_tool,
+    get_tool_definitions,
     read_document_chunks,
 )
 
@@ -30,6 +29,15 @@ Use the available tools to read and search the document, then provide a comprehe
 Read enough of the document to fully answer the question. Be thorough but efficient — don't re-read chunks you've already seen.
 """
 
+GENERAL_TOOLS_SYSTEM_PROMPT = """\
+You are a helpful assistant with access to tools.
+
+Available capabilities:
+{tool_descriptions}
+
+Use the appropriate tool(s) to answer the user's question. Be thorough but efficient.
+"""
+
 
 def _truncate_result(text: str, max_len: int = 500) -> str:
     """Truncate tool result for SSE summary."""
@@ -38,13 +46,28 @@ def _truncate_result(text: str, max_len: int = 500) -> str:
     return text[:max_len] + "..."
 
 
+def _build_tool_description_text(tools: list[dict], format: str) -> str:
+    """Build a human-readable list of tool descriptions for the system prompt."""
+    lines = []
+    for tool in tools:
+        if format == "anthropic":
+            name = tool.get("name", "")
+            desc = tool.get("description", "")
+        else:
+            func = tool.get("function", {})
+            name = func.get("name", "")
+            desc = func.get("description", "")
+        lines.append(f"- {name}: {desc}")
+    return "\n".join(lines)
+
+
 @observe(name="sub_agent_execution")
 async def run_sub_agent(
     user_message: str,
-    document_id: str,
-    document_filename: str,
     user_id: str,
     chat_history: list[dict],
+    document_id: str | None = None,
+    document_filename: str | None = None,
     client=None,
     model: str | None = None,
     provider: str | None = None,
@@ -55,12 +78,24 @@ async def run_sub_agent(
     effective_model = model or settings.llm_model
     effective_client = client or openai_client
 
-    yield {"type": "sub_agent_start", "document": document_filename}
+    mode = "document_analysis" if document_id else "tools"
+    yield {"type": "sub_agent_start", "document": document_filename, "mode": mode}
 
-    system_prompt = SUB_AGENT_SYSTEM_PROMPT.format(
-        filename=document_filename,
-        document_id=document_id,
+    # Determine tool format and build tool list
+    tool_format = "anthropic" if provider == "anthropic" else "openai"
+    tools = get_tool_definitions(
+        format=tool_format,
+        include_document_tools=document_id is not None,
     )
+
+    if document_id:
+        system_prompt = SUB_AGENT_SYSTEM_PROMPT.format(
+            filename=document_filename,
+            document_id=document_id,
+        )
+    else:
+        tool_desc = _build_tool_description_text(tools, tool_format)
+        system_prompt = GENERAL_TOOLS_SYSTEM_PROMPT.format(tool_descriptions=tool_desc)
 
     tool_calls_count = 0
     iterations = 0
@@ -115,6 +150,7 @@ async def run_sub_agent(
 
     get_client().update_current_span(
         metadata={
+            "mode": mode,
             "document_id": document_id,
             "document_filename": document_filename,
             "tool_calls_count": tool_calls_count,
@@ -126,8 +162,8 @@ async def run_sub_agent(
 
 async def _run_openai_loop(
     user_message: str,
-    document_id: str,
-    document_filename: str,
+    document_id: str | None,
+    document_filename: str | None,
     user_id: str,
     chat_history: list[dict],
     client,
@@ -135,6 +171,7 @@ async def _run_openai_loop(
     system_prompt: str,
     stop_event: asyncio.Event | None,
     db: aiosqlite.Connection | None,
+    tools: list[dict] | None = None,
 ) -> AsyncGenerator[dict, None]:
     """OpenAI-compatible tool-calling loop."""
     messages = [{"role": "system", "content": system_prompt}]
@@ -160,7 +197,7 @@ async def _run_openai_loop(
             response = await client.chat.completions.create(
                 model=model,
                 messages=messages,
-                tools=TOOL_DEFINITIONS,
+                tools=tools,
                 stream=False,
             )
         except Exception as e:
@@ -185,17 +222,42 @@ async def _run_openai_loop(
         msg = choice.message
 
         if not msg.tool_calls:
-            # Final response — stream it
-            if msg.content:
-                # Re-issue as streaming for consistent UX
-                messages.append({"role": "assistant", "content": msg.content})
-                for i in range(0, len(msg.content), 20):
-                    chunk = msg.content[i : i + 20]
-                    yield {"type": "delta", "content": chunk}
+            # Final response — re-issue as streaming for real streaming UX
+            try:
+                stream_response = await client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    stream=True,
+                )
+                async for chunk in stream_response:
+                    if stop_event and stop_event.is_set():
+                        break
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        yield {"type": "delta", "content": chunk.choices[0].delta.content}
+                await stream_response.close()
+            except Exception:
+                # Fallback: emit the non-streamed content
+                if msg.content:
+                    for i in range(0, len(msg.content), 20):
+                        yield {"type": "delta", "content": msg.content[i : i + 20]}
             break
 
-        # Process tool calls
-        messages.append(msg)  # Add assistant message with tool_calls
+        # Process tool calls — serialize to dict for message history
+        tool_calls_list = []
+        for tc in msg.tool_calls:
+            tool_calls_list.append({
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.function.name,
+                    "arguments": tc.function.arguments,
+                },
+            })
+        messages.append({
+            "role": "assistant",
+            "content": msg.content or None,
+            "tool_calls": tool_calls_list,
+        })
 
         for tool_call in msg.tool_calls:
             tool_name = tool_call.function.name
@@ -249,8 +311,8 @@ async def _run_openai_loop(
 
 async def _run_anthropic_loop(
     user_message: str,
-    document_id: str,
-    document_filename: str,
+    document_id: str | None,
+    document_filename: str | None,
     user_id: str,
     chat_history: list[dict],
     client,
@@ -258,6 +320,7 @@ async def _run_anthropic_loop(
     system_prompt: str,
     stop_event: asyncio.Event | None,
     db: aiosqlite.Connection | None,
+    tools: list[dict] | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Anthropic tool-calling loop."""
     messages = []
@@ -284,7 +347,7 @@ async def _run_anthropic_loop(
                 model=model,
                 messages=messages,
                 system=system_prompt,
-                tools=ANTHROPIC_TOOL_DEFINITIONS,
+                tools=tools,
                 max_tokens=4096,
             )
         except Exception as e:
@@ -376,8 +439,8 @@ async def _run_anthropic_loop(
 
 async def _fallback_single_shot(
     user_message: str,
-    document_id: str,
-    document_filename: str,
+    document_id: str | None,
+    document_filename: str | None,
     user_id: str,
     client,
     model: str,
@@ -386,29 +449,32 @@ async def _fallback_single_shot(
     provider: str | None,
 ) -> AsyncGenerator[dict, None]:
     """Fallback: read all chunks and inject into context for single-shot completion."""
-    # Read all document chunks
-    all_content = read_document_chunks(
-        document_id=document_id,
-        user_id=user_id,
-        start_chunk=0,
-        max_chunks=200,  # Read as much as possible
-    )
+    fallback_system = system_prompt
 
-    yield {
-        "type": "sub_agent_tool_call",
-        "tool": "read_document_chunks",
-        "args": {"document_id": document_id, "start_chunk": 0, "max_chunks": 200},
-    }
-    yield {
-        "type": "sub_agent_tool_result",
-        "tool": "read_document_chunks",
-        "summary": f"Read full document ({len(all_content)} chars)",
-    }
+    if document_id:
+        # Read all document chunks when we have a document
+        all_content = read_document_chunks(
+            document_id=document_id,
+            user_id=user_id,
+            start_chunk=0,
+            max_chunks=200,
+        )
 
-    fallback_system = (
-        f"{system_prompt}\n\n"
-        f"Here is the full content of '{document_filename}':\n\n{all_content}"
-    )
+        yield {
+            "type": "sub_agent_tool_call",
+            "tool": "read_document_chunks",
+            "args": {"document_id": document_id, "start_chunk": 0, "max_chunks": 200},
+        }
+        yield {
+            "type": "sub_agent_tool_result",
+            "tool": "read_document_chunks",
+            "summary": f"Read full document ({len(all_content)} chars)",
+        }
+
+        fallback_system = (
+            f"{system_prompt}\n\n"
+            f"Here is the full content of '{document_filename}':\n\n{all_content}"
+        )
 
     if provider == "anthropic":
         try:

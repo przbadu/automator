@@ -22,8 +22,22 @@ class SourceCitation(BaseModel):
     document_id: str = ""
 
 
+class ToolCallRecord(BaseModel):
+    tool: str
+    args: dict = {}
+
+
+class ToolResultRecord(BaseModel):
+    tool: str
+    summary: str = ""
+
+
 class MessageMetadata(BaseModel):
     sources: list[SourceCitation] = []
+    sub_agent: bool | None = None
+    target_document: str | None = None
+    tool_calls: list[ToolCallRecord] = []
+    tool_results: list[ToolResultRecord] = []
 
 
 class MessageResponse(BaseModel):

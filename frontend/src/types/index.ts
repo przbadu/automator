@@ -54,6 +54,8 @@ export interface MessageMetadata {
   sources: SourceCitation[]
   sub_agent?: boolean
   target_document?: string
+  tool_calls?: SubAgentToolCall[]
+  tool_results?: SubAgentToolResult[]
 }
 
 export interface Message {

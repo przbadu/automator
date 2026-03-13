@@ -11,8 +11,9 @@ from app.services.embedding_service import generate_embeddings
 
 logger = logging.getLogger(__name__)
 
-# OpenAI function-calling tool definitions
-TOOL_DEFINITIONS = [
+# --- Static document tool definitions ---
+
+_DOCUMENT_TOOLS_OPENAI = [
     {
         "type": "function",
         "function": {
@@ -84,8 +85,7 @@ TOOL_DEFINITIONS = [
     },
 ]
 
-# Anthropic tool format
-ANTHROPIC_TOOL_DEFINITIONS = [
+_DOCUMENT_TOOLS_ANTHROPIC = [
     {
         "name": "read_document_chunks",
         "description": "Read chunks from a document. Use this to read the full content of a document by reading its chunks sequentially.",
@@ -147,6 +147,30 @@ ANTHROPIC_TOOL_DEFINITIONS = [
         },
     },
 ]
+
+
+def get_tool_definitions(
+    format: str = "openai",
+    include_document_tools: bool = True,
+) -> list[dict]:
+    """Build a dynamic tool list based on config and context."""
+    tools: list[dict] = []
+
+    if include_document_tools:
+        if format == "anthropic":
+            tools.extend(_DOCUMENT_TOOLS_ANTHROPIC)
+        else:
+            tools.extend(_DOCUMENT_TOOLS_OPENAI)
+
+    if settings.text_to_sql_enabled:
+        from app.services.sql_tool import SQL_TOOL_ANTHROPIC, SQL_TOOL_OPENAI
+        tools.append(SQL_TOOL_ANTHROPIC if format == "anthropic" else SQL_TOOL_OPENAI)
+
+    if settings.web_search_enabled and settings.web_search_url:
+        from app.services.web_search_tool import WEB_SEARCH_TOOL_ANTHROPIC, WEB_SEARCH_TOOL_OPENAI
+        tools.append(WEB_SEARCH_TOOL_ANTHROPIC if format == "anthropic" else WEB_SEARCH_TOOL_OPENAI)
+
+    return tools
 
 
 @observe(name="sub_agent_tool_read_document_chunks")
@@ -359,5 +383,11 @@ async def execute_tool(
             user_id=user_id,
             db=db,
         )
+    elif tool_name == "query_database":
+        from app.services.sql_tool import execute_sql_query
+        return await execute_sql_query(arguments["sql_query"], user_id, db)
+    elif tool_name == "web_search":
+        from app.services.web_search_tool import search_web
+        return await search_web(arguments["query"])
     else:
         return f"Unknown tool: {tool_name}"

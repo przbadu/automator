@@ -4,18 +4,20 @@ import { cn } from "@/lib/utils"
 
 interface SubAgentActivityProps {
   activity: SubAgentActivityType
+  /** Start collapsed (for persisted messages) */
+  defaultCollapsed?: boolean
 }
 
-export function SubAgentActivity({ activity }: SubAgentActivityProps) {
-  const [open, setOpen] = useState(true)
+export function SubAgentActivity({ activity, defaultCollapsed }: SubAgentActivityProps) {
+  const [open, setOpen] = useState(!defaultCollapsed)
 
-  // Auto-collapse when completed
+  // Auto-collapse when completed (only during live streaming, not for persisted)
   useEffect(() => {
-    if (activity.completed) {
+    if (!defaultCollapsed && activity.completed) {
       const timer = setTimeout(() => setOpen(false), 1000)
       return () => clearTimeout(timer)
     }
-  }, [activity.completed])
+  }, [activity.completed, defaultCollapsed])
 
   const isWorking = activity.started && !activity.completed &&
     activity.toolCalls.length > activity.toolResults.length

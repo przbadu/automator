@@ -254,6 +254,7 @@ async def send_message(
                 {"id": r[0], "filename": r[1], "chunk_count": r[2]}
                 for r in await doc_cursor.fetchall()
             ]
+            logger.info("Sub-agent: found %d completed documents for user", len(user_documents))
             intent = await classify_intent(
                 user_message=req.content,
                 user_documents=user_documents,
@@ -262,12 +263,16 @@ async def send_message(
                 model=llm_model,
                 provider=llm_provider,
             )
-            if intent.needs_sub_agent and intent.target_document_id:
+            logger.info(
+                "Sub-agent intent: needs=%s, doc_id=%s, doc_name=%s",
+                intent.needs_sub_agent, intent.target_document_id, intent.target_document_filename,
+            )
+            if intent.needs_sub_agent:
                 use_sub_agent = True
                 target_document_id = intent.target_document_id
                 target_document_filename = intent.target_document_filename
                 logger.info(
-                    "Sub-agent activated for document %s (%s)",
+                    "Sub-agent activated (doc=%s, id=%s)",
                     target_document_filename,
                     target_document_id,
                 )
@@ -304,18 +309,15 @@ async def send_message(
     stop_event = asyncio.Event()
     _active_streams[thread_id] = stop_event
 
-    if use_sub_agent:
-        metadata_json = json.dumps({
-            "sub_agent": True,
-            "target_document": target_document_filename,
-            "sources": [],
-        })
-    else:
+    if not use_sub_agent:
         metadata_json = json.dumps({"sources": sources}) if sources else "{}"
 
     async def event_generator():
         assistant_content = ""
         stopped = False
+        # Collect sub-agent activity for persistence
+        sub_agent_tool_calls: list[dict] = []
+        sub_agent_tool_results: list[dict] = []
         try:
             if use_sub_agent:
                 # Sub-agent path
@@ -333,6 +335,16 @@ async def send_message(
                 ):
                     if event["type"] == "delta":
                         assistant_content += event.get("content", "")
+                    elif event["type"] == "sub_agent_tool_call":
+                        sub_agent_tool_calls.append({
+                            "tool": event.get("tool", ""),
+                            "args": event.get("args", {}),
+                        })
+                    elif event["type"] == "sub_agent_tool_result":
+                        sub_agent_tool_results.append({
+                            "tool": event.get("tool", ""),
+                            "summary": event.get("summary", ""),
+                        })
                     yield {"data": json.dumps(event)}
             else:
                 # Normal RAG path
@@ -347,13 +359,25 @@ async def send_message(
             if stopped:
                 logger.info("Stop requested for thread %s, saving partial response (%d chars)", thread_id, len(assistant_content))
 
-            # Save assistant message (full or partial) with citation metadata
+            # Build final metadata (include sub-agent activity if applicable)
+            if use_sub_agent:
+                final_metadata = json.dumps({
+                    "sub_agent": True,
+                    "target_document": target_document_filename,
+                    "sources": [],
+                    "tool_calls": sub_agent_tool_calls,
+                    "tool_results": sub_agent_tool_results,
+                })
+            else:
+                final_metadata = metadata_json
+
+            # Save assistant message (full or partial) with metadata
             if assistant_content.strip():
                 assistant_msg_id = str(uuid.uuid4())
                 msg_now = datetime.now(timezone.utc).isoformat()
                 await db.execute(
                     "INSERT INTO messages (id, thread_id, user_id, role, content, metadata, created_at) VALUES (?, ?, ?, 'assistant', ?, ?, ?)",
-                    (assistant_msg_id, thread_id, current_user["id"], assistant_content, metadata_json, msg_now),
+                    (assistant_msg_id, thread_id, current_user["id"], assistant_content, final_metadata, msg_now),
                 )
                 await db.execute(
                     "UPDATE threads SET updated_at = ? WHERE id = ?",

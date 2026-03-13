@@ -55,6 +55,18 @@ class Settings(BaseSettings):
     sub_agent_max_iterations: int = 5
     sub_agent_max_chunks_per_read: int = 20
 
+    # Text-to-SQL
+    text_to_sql_enabled: bool = True
+    text_to_sql_max_rows: int = 50
+    text_to_sql_timeout_seconds: int = 5
+
+    # Web Search
+    web_search_enabled: bool = False
+    web_search_provider: str = "searxng"  # searxng | tavily | brave
+    web_search_url: str = ""
+    web_search_api_key: str = ""
+    web_search_max_results: int = 5
+
     # Encryption
     encryption_key: str = ""
 
