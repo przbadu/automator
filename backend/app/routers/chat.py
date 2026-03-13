@@ -203,7 +203,7 @@ async def send_message(
         retrieval_results = await retrieve_relevant_chunks(req.content, current_user["id"])
         if retrieval_results:
             context_chunks = [
-                {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content}
+                {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
                 for r in retrieval_results
             ]
             system_message = build_rag_system_message(context_chunks)

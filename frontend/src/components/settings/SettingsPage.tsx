@@ -6,12 +6,14 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { DocumentUpload } from "@/components/documents/DocumentUpload"
 import { DocumentList } from "@/components/documents/DocumentList"
 import { LLMConfigPanel } from "./LLMConfigPanel"
+import { MetadataSchemaPanel } from "./MetadataSchemaPanel"
 import { cn } from "@/lib/utils"
 
-type SettingsTab = "llm" | "documents"
+type SettingsTab = "llm" | "metadata" | "documents"
 
 const SETTINGS_MENU: { key: SettingsTab; label: string }[] = [
   { key: "llm", label: "LLM Configurations" },
+  { key: "metadata", label: "Metadata Schema" },
   { key: "documents", label: "Documents" },
 ]
 
@@ -91,6 +93,8 @@ export function SettingsPage({ user, onLogout, onNavigateToChat }: Props) {
           <div className="max-w-3xl mx-auto p-4">
             {tab === "llm" ? (
               <LLMConfigPanel />
+            ) : tab === "metadata" ? (
+              <MetadataSchemaPanel />
             ) : (
               <div>
                 <DocumentUpload

@@ -28,8 +28,9 @@ def build_rag_system_message(context_chunks: list[dict]) -> str:
 
     context_parts = []
     for chunk in context_chunks:
+        doc_type = f" ({chunk['document_type']})" if chunk.get("document_type") else ""
         context_parts.append(
-            f"[Source: {chunk['filename']}, Chunk {chunk['chunk_index']}]\n{chunk['content']}"
+            f"[Source: {chunk['filename']}{doc_type}, Chunk {chunk['chunk_index']}]\n{chunk['content']}"
         )
     context_text = "\n---\n".join(context_parts)
 

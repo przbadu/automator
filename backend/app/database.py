@@ -82,6 +82,13 @@ async def init_db() -> None:
         await db.execute(
             "CREATE INDEX IF NOT EXISTS idx_documents_user_filename ON documents(user_id, filename)"
         )
+
+        # Add metadata column for LLM-extracted metadata (idempotent)
+        try:
+            await db.execute("ALTER TABLE documents ADD COLUMN metadata TEXT DEFAULT '{}'")
+        except Exception:
+            pass  # Column already exists
+
         await db.commit()
     finally:
         await db.close()

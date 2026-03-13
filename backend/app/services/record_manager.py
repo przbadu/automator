@@ -28,6 +28,10 @@ async def check_duplicate(
     )
     row = await cursor.fetchone()
     if row:
+        # If failed, allow re-processing instead of skipping
+        if row[5] == "failed":
+            return {"action": "retry", "document": row}
+        # Same content already exists or is being processed — skip
         return {"action": "skip", "document": row}
 
     # Check for same filename (different content)

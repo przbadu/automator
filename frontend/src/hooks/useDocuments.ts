@@ -41,7 +41,14 @@ export function useDocuments() {
           return { doc, message: "Document updated with new content", variant: "warning" }
         }
 
-        setDocuments((prev) => [doc, ...prev])
+        // Check if document already exists (e.g. retry of failed/pending upload)
+        setDocuments((prev) => {
+          const exists = prev.some((d) => d.id === doc.id)
+          if (exists) {
+            return prev.map((d) => (d.id === doc.id ? doc : d))
+          }
+          return [doc, ...prev]
+        })
         return { doc, message: "Document uploaded successfully", variant: "success" }
       } finally {
         setUploading(false)
@@ -89,7 +96,7 @@ export function useDocuments() {
             if (line.startsWith("data: ")) {
               try {
                 const event = JSON.parse(line.slice(6))
-                if (event.type === "status_update") {
+                if (event.type === "status_update" && event.status !== "skipped") {
                   setDocuments((prev) =>
                     prev.map((d) =>
                       d.id === event.document_id

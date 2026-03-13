@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.database import get_chroma_collection
 from app.services.embedding_service import generate_embeddings
@@ -10,12 +10,14 @@ class RetrievalResult:
     document_filename: str
     chunk_index: int
     distance: float
+    document_type: str | None = None
 
 
 async def retrieve_relevant_chunks(
     query: str,
     user_id: str,
     top_k: int = 5,
+    document_type: str | None = None,
 ) -> list[RetrievalResult]:
     """Retrieve the most relevant document chunks for a query."""
     query_embeddings = await generate_embeddings([query])
@@ -29,9 +31,21 @@ async def retrieve_relevant_chunks(
     if count == 0:
         return []
 
+    # Build where filter with optional metadata filters
+    where_filter: dict
+    if document_type:
+        where_filter = {
+            "$and": [
+                {"user_id": user_id},
+                {"document_type": document_type},
+            ]
+        }
+    else:
+        where_filter = {"user_id": user_id}
+
     results = collection.query(
         query_embeddings=query_embeddings,
-        where={"user_id": user_id},
+        where=where_filter,
         n_results=min(top_k, count),
         include=["documents", "metadatas", "distances"],
     )
@@ -50,6 +64,7 @@ async def retrieve_relevant_chunks(
             document_filename=meta.get("filename", "unknown"),
             chunk_index=meta.get("chunk_index", 0),
             distance=dist,
+            document_type=meta.get("document_type"),
         ))
 
     return retrieval_results

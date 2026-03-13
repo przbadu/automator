@@ -11,6 +11,7 @@ class DocumentResponse(BaseModel):
     chunk_count: int
     error_message: str | None
     content_hash: str | None = None
+    metadata: dict | None = None
     duplicate: bool = False
     updated: bool = False
     created_at: str

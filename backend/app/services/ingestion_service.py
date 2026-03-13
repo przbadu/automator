@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -6,6 +7,7 @@ import aiosqlite
 from app.database import DB_PATH, get_chroma_collection
 from app.services.chunking_service import chunk_text
 from app.services.embedding_service import generate_embeddings
+from app.services.metadata_service import extract_metadata
 from app.services.status_events import publish
 from app.services.storage_service import read_file_text
 
@@ -69,6 +71,24 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
             await _update_status(db, doc_id, user_id, "failed", error_message="No chunks produced")
             return
 
+        # 2.5 Metadata extraction (best-effort)
+        await _update_status(db, doc_id, user_id, "extracting_metadata", progress="Extracting metadata...")
+        metadata = None
+        try:
+            db.row_factory = aiosqlite.Row
+            metadata = await extract_metadata(text, filename, user_id, db)
+            db.row_factory = None
+            if metadata:
+                await db.execute(
+                    "UPDATE documents SET metadata = ? WHERE id = ?",
+                    (json.dumps(metadata), doc_id),
+                )
+                await db.commit()
+                logger.info("Metadata extracted for document %s: %s", doc_id, list(metadata.keys()))
+        except Exception as e:
+            db.row_factory = None
+            logger.warning("Metadata extraction failed for %s, continuing: %s", doc_id, e)
+
         # 3. Embedding
         await _update_status(db, doc_id, user_id, "embedding", progress=f"Generating embeddings for {len(chunks)} chunks...")
         try:
@@ -80,15 +100,26 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
         # 4. Store in ChromaDB
         collection = get_chroma_collection()
         ids = [f"{doc_id}_chunk_{c.chunk_index}" for c in chunks]
-        metadatas = [
-            {
+
+        # Build chunk metadata, flattening extracted metadata for filtering
+        def _build_chunk_metadata(chunk_index: int) -> dict:
+            m = {
                 "user_id": user_id,
                 "document_id": doc_id,
                 "filename": filename,
-                "chunk_index": c.chunk_index,
+                "chunk_index": chunk_index,
             }
-            for c in chunks
-        ]
+            if metadata:
+                for key, value in metadata.items():
+                    if isinstance(value, list):
+                        m[key] = ",".join(str(v) for v in value)
+                    elif isinstance(value, bool):
+                        m[key] = str(value).lower()
+                    elif value is not None:
+                        m[key] = value
+            return m
+
+        metadatas = [_build_chunk_metadata(c.chunk_index) for c in chunks]
         documents = [c.content for c in chunks]
 
         # Remove any existing chunks for this document (handles re-ingestion on update)
@@ -128,7 +159,7 @@ async def reset_stuck_documents() -> None:
     try:
         await db.execute(
             """UPDATE documents SET status = 'pending', updated_at = ?
-               WHERE status IN ('processing', 'chunking', 'embedding')""",
+               WHERE status IN ('processing', 'chunking', 'extracting_metadata', 'embedding')""",
             (datetime.now(timezone.utc).isoformat(),),
         )
         await db.commit()

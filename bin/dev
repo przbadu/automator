@@ -78,6 +78,20 @@ else
   fi
 fi
 
+# --- Kill old servers ---
+
+if lsof -ti :8000 &>/dev/null; then
+  warn "Killing existing process on port 8000..."
+  kill $(lsof -ti :8000) 2>/dev/null || true
+  sleep 1
+fi
+
+if lsof -ti :5173 &>/dev/null; then
+  warn "Killing existing process on port 5173..."
+  kill $(lsof -ti :5173) 2>/dev/null || true
+  sleep 1
+fi
+
 # --- Start servers ---
 
 log "Starting backend (uvicorn --reload)..."

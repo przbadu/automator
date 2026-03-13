@@ -185,4 +185,31 @@ export class ApiClient {
       headers: this.headers(),
     });
   }
+
+  // --- Metadata Schemas ---
+
+  async getMetadataSchema() {
+    return this.request.get(`${BACKEND_URL}/metadata-schemas`, {
+      headers: this.headers(),
+    });
+  }
+
+  async saveMetadataSchema(fields: Record<string, unknown>[]) {
+    return this.request.put(`${BACKEND_URL}/metadata-schemas`, {
+      headers: { ...this.headers(), "Content-Type": "application/json" },
+      data: { fields },
+    });
+  }
+
+  async deleteMetadataSchema() {
+    return this.request.delete(`${BACKEND_URL}/metadata-schemas`, {
+      headers: this.headers(),
+    });
+  }
+
+  async getDefaultMetadataSchema() {
+    return this.request.get(`${BACKEND_URL}/metadata-schemas/defaults`, {
+      headers: this.headers(),
+    });
+  }
 }

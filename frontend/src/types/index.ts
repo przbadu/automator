@@ -67,10 +67,29 @@ export interface Document {
   filename: string
   file_size: number
   mime_type: string
-  status: "pending" | "processing" | "chunking" | "embedding" | "completed" | "failed"
+  status: "pending" | "processing" | "chunking" | "extracting_metadata" | "embedding" | "completed" | "failed"
   chunk_count: number
   error_message: string | null
   content_hash: string | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export type MetadataFieldType = "string" | "number" | "date" | "boolean" | "list[string]"
+
+export interface MetadataFieldDefinition {
+  name: string
+  display_label: string
+  data_type: MetadataFieldType
+  required: boolean
+  description: string
+}
+
+export interface MetadataSchema {
+  id: string
+  user_id: string
+  fields: MetadataFieldDefinition[]
   created_at: string
   updated_at: string
 }

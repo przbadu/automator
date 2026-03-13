@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -38,6 +39,16 @@ def _mime_for_ext(ext: str) -> str:
     return "text/markdown" if ext == ".md" else "text/plain"
 
 
+def _parse_metadata(raw: str | None) -> dict | None:
+    """Parse metadata JSON string, returning None for empty/invalid."""
+    if not raw or raw == "{}":
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
 @router.post("/upload", response_model=DocumentResponse)
 async def upload_document(
     file: UploadFile,
@@ -74,10 +85,30 @@ async def upload_document(
             mime_type=row[4], status=row[5], chunk_count=row[6], error_message=row[7],
             created_at=row[8], updated_at=row[9], content_hash=row[10], duplicate=True,
         )
-        await publish(user_id, {
-            "type": "status_update", "document_id": row[0],
-            "status": "skipped", "progress": "Duplicate content — skipped",
-        })
+        return JSONResponse(status_code=200, content=doc.model_dump())
+
+    if result and result["action"] == "retry":
+        row = result["document"]
+        doc_id = row[0]
+        existing_filename = row[2]
+        # Delete old file and re-save (in case it was corrupted or missing)
+        delete_file(user_id, doc_id)
+        await save_file(user_id, doc_id, existing_filename, content)
+        # Reset status to pending for re-processing
+        await db.execute(
+            """UPDATE documents SET status = 'pending', chunk_count = 0,
+                      error_message = NULL, updated_at = ?
+               WHERE id = ?""",
+            (now, doc_id),
+        )
+        await db.commit()
+        from app.services.ingestion_service import ingest_document
+        background_tasks.add_task(ingest_document, doc_id, user_id, existing_filename)
+        doc = DocumentResponse(
+            id=doc_id, user_id=user_id, filename=existing_filename, file_size=file_size,
+            mime_type=mime_type, status="pending", chunk_count=0, error_message=None,
+            content_hash=content_hash, created_at=row[8], updated_at=now,
+        )
         return JSONResponse(status_code=200, content=doc.model_dump())
 
     if result and result["action"] == "conflict":
@@ -147,7 +178,7 @@ async def list_documents(
 ):
     cursor = await db.execute(
         """SELECT id, user_id, filename, file_size, mime_type, status, chunk_count,
-                  error_message, created_at, updated_at, content_hash
+                  error_message, created_at, updated_at, content_hash, metadata
            FROM documents WHERE user_id = ? ORDER BY created_at DESC""",
         (current_user["id"],),
     )
@@ -157,7 +188,7 @@ async def list_documents(
             DocumentResponse(
                 id=r[0], user_id=r[1], filename=r[2], file_size=r[3], mime_type=r[4],
                 status=r[5], chunk_count=r[6], error_message=r[7], created_at=r[8],
-                updated_at=r[9], content_hash=r[10],
+                updated_at=r[9], content_hash=r[10], metadata=_parse_metadata(r[11]),
             )
             for r in rows
         ]
@@ -189,7 +220,7 @@ async def get_document(
 ):
     cursor = await db.execute(
         """SELECT id, user_id, filename, file_size, mime_type, status, chunk_count,
-                  error_message, created_at, updated_at, content_hash
+                  error_message, created_at, updated_at, content_hash, metadata
            FROM documents WHERE id = ? AND user_id = ?""",
         (document_id, current_user["id"]),
     )
@@ -199,7 +230,7 @@ async def get_document(
     return DocumentResponse(
         id=row[0], user_id=row[1], filename=row[2], file_size=row[3], mime_type=row[4],
         status=row[5], chunk_count=row[6], error_message=row[7], created_at=row[8],
-        updated_at=row[9], content_hash=row[10],
+        updated_at=row[9], content_hash=row[10], metadata=_parse_metadata(row[11]),
     )
 
 
