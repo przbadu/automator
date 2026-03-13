@@ -279,38 +279,38 @@ async def send_message(
         except Exception:
             logger.warning("Intent classification failed, using normal pipeline", exc_info=True)
 
-    # Retrieve relevant document context (skip if sub-agent will handle it)
+    # Retrieve relevant document context (always run for source citations)
     system_message = None
     sources: list[dict] = []
-    if not use_sub_agent:
-        try:
-            retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
-            if retrieval_results:
-                context_chunks = [
-                    {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
-                    for r in retrieval_results
-                ]
+    try:
+        retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
+        if retrieval_results:
+            context_chunks = [
+                {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
+                for r in retrieval_results
+            ]
+            # Only build RAG system message for normal path (sub-agent has its own context)
+            if not use_sub_agent:
                 system_message = build_rag_system_message(context_chunks)
-                sources = [
-                    {
-                        "filename": r.document_filename,
-                        "chunk_index": r.chunk_index,
-                        "preview": r.chunk_content[:200],
-                        "relevance_score": round(r.relevance_score, 3),
-                        "document_type": r.document_type,
-                        "document_id": r.document_id,
-                    }
-                    for r in retrieval_results
-                ]
-        except Exception:
-            logger.warning("Retrieval failed, proceeding without context", exc_info=True)
+            sources = [
+                {
+                    "filename": r.document_filename,
+                    "chunk_index": r.chunk_index,
+                    "preview": r.chunk_content[:200],
+                    "relevance_score": round(r.relevance_score, 3),
+                    "document_type": r.document_type,
+                    "document_id": r.document_id,
+                }
+                for r in retrieval_results
+            ]
+    except Exception:
+        logger.warning("Retrieval failed, proceeding without context", exc_info=True)
 
     # Register stop signal for this thread
     stop_event = asyncio.Event()
     _active_streams[thread_id] = stop_event
 
-    if not use_sub_agent:
-        metadata_json = json.dumps({"sources": sources}) if sources else "{}"
+    metadata_json = json.dumps({"sources": sources}) if sources else "{}"
 
     async def event_generator():
         assistant_content = ""
@@ -320,7 +320,9 @@ async def send_message(
         sub_agent_tool_results: list[dict] = []
         try:
             if use_sub_agent:
-                # Sub-agent path
+                # Sub-agent path — emit sources first if available
+                if sources:
+                    yield {"data": json.dumps({"type": "sources", "sources": sources})}
                 async for event in run_sub_agent(
                     user_message=req.content,
                     document_id=target_document_id,
@@ -364,7 +366,7 @@ async def send_message(
                 final_metadata = json.dumps({
                     "sub_agent": True,
                     "target_document": target_document_filename,
-                    "sources": [],
+                    "sources": sources,
                     "tool_calls": sub_agent_tool_calls,
                     "tool_results": sub_agent_tool_results,
                 })
