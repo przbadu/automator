@@ -152,6 +152,7 @@ _DOCUMENT_TOOLS_ANTHROPIC = [
 def get_tool_definitions(
     format: str = "openai",
     include_document_tools: bool = True,
+    include_kb_tools: bool = False,
 ) -> list[dict]:
     """Build a dynamic tool list based on config and context."""
     tools: list[dict] = []
@@ -161,6 +162,13 @@ def get_tool_definitions(
             tools.extend(_DOCUMENT_TOOLS_ANTHROPIC)
         else:
             tools.extend(_DOCUMENT_TOOLS_OPENAI)
+
+    if include_kb_tools:
+        from app.services.kb_agent_tools import _KB_TOOLS_ANTHROPIC, _KB_TOOLS_OPENAI
+        if format == "anthropic":
+            tools.extend(_KB_TOOLS_ANTHROPIC)
+        else:
+            tools.extend(_KB_TOOLS_OPENAI)
 
     if settings.text_to_sql_enabled:
         from app.services.sql_tool import SQL_TOOL_ANTHROPIC, SQL_TOOL_OPENAI
@@ -389,5 +397,55 @@ async def execute_tool(
     elif tool_name == "web_search":
         from app.services.web_search_tool import search_web
         return await search_web(arguments["query"])
+    elif tool_name == "kb_ls":
+        from app.services.kb_agent_tools import execute_kb_ls
+        return await execute_kb_ls(
+            path=arguments.get("path", "/"),
+            user_id=user_id,
+            db=db,
+        )
+    elif tool_name == "kb_tree":
+        from app.services.kb_agent_tools import execute_kb_tree
+        return await execute_kb_tree(
+            path=arguments.get("path", "/"),
+            depth=arguments.get("depth", 2),
+            limit=arguments.get("limit", 50),
+            user_id=user_id,
+            db=db,
+        )
+    elif tool_name == "kb_grep":
+        from app.services.kb_agent_tools import execute_kb_grep
+        return await execute_kb_grep(
+            pattern=arguments["pattern"],
+            user_id=user_id,
+            db=db,
+            path=arguments.get("path"),
+            case_insensitive=arguments.get("case_insensitive", False),
+        )
+    elif tool_name == "kb_glob":
+        from app.services.kb_agent_tools import execute_kb_glob
+        return await execute_kb_glob(
+            pattern=arguments["pattern"],
+            user_id=user_id,
+            db=db,
+        )
+    elif tool_name == "kb_read":
+        from app.services.kb_agent_tools import execute_kb_read
+        return await execute_kb_read(
+            path=arguments["path"],
+            user_id=user_id,
+            db=db,
+            offset=arguments.get("offset"),
+            limit=arguments.get("limit"),
+        )
+    elif tool_name == "kb_semantic_search":
+        from app.services.kb_agent_tools import execute_kb_semantic_search
+        return await execute_kb_semantic_search(
+            query=arguments["query"],
+            user_id=user_id,
+            top_k=arguments.get("top_k", 5),
+        )
+    elif tool_name == "analyze_document":
+        return "analyze_document tool not available in this context"
     else:
         return f"Unknown tool: {tool_name}"
