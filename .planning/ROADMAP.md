@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Schema migration (folders, document_content, FTS5), ingestion pipeline content storage, content/FTS5 endpoints and tests
+- [x] 01-01-PLAN.md — Schema migration (folders, document_content, FTS5), ingestion pipeline content storage, content/FTS5 endpoints and tests
 - [ ] 01-02-PLAN.md — Backfill service for existing documents, admin endpoint, backfill tests
 
 ### Phase 2: Folder Operations API
