@@ -170,10 +170,6 @@ def get_tool_definitions(
         else:
             tools.extend(_KB_TOOLS_OPENAI)
 
-    if settings.text_to_sql_enabled:
-        from app.services.sql_tool import SQL_TOOL_ANTHROPIC, SQL_TOOL_OPENAI
-        tools.append(SQL_TOOL_ANTHROPIC if format == "anthropic" else SQL_TOOL_OPENAI)
-
     if settings.web_search_enabled:
         from app.services.web_search_tool import WEB_SEARCH_TOOL_ANTHROPIC, WEB_SEARCH_TOOL_OPENAI
         tools.append(WEB_SEARCH_TOOL_ANTHROPIC if format == "anthropic" else WEB_SEARCH_TOOL_OPENAI)
@@ -394,9 +390,6 @@ async def execute_tool(
             user_id=user_id,
             db=db,
         )
-    elif tool_name == "query_database":
-        from app.services.sql_tool import execute_sql_query
-        return await execute_sql_query(arguments["sql_query"], user_id, db)
     elif tool_name == "web_search":
         from app.services.web_search_tool import search_web
         return await search_web(arguments["query"])

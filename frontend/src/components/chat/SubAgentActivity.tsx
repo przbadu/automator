@@ -78,11 +78,9 @@ export function SubAgentActivity({ activity, defaultCollapsed }: SubAgentActivit
                     {i + 1}.
                   </span>
                   <span className="font-medium text-foreground">
-                    {call.tool === "query_database"
-                      ? "Querying database"
-                      : call.tool === "web_search"
-                        ? "Searching the web"
-                        : call.tool.replace(/_/g, " ")}
+                    {call.tool === "web_search"
+                      ? "Searching the web"
+                      : call.tool.replace(/_/g, " ")}
                   </span>
                   {call.args && Object.keys(call.args).length > 0 && (
                     <span className="text-muted-foreground truncate">
