@@ -12,6 +12,7 @@ class DocumentResponse(BaseModel):
     error_message: str | None
     content_hash: str | None = None
     metadata: dict | None = None
+    folder_id: str | None = None
     duplicate: bool = False
     updated: bool = False
     created_at: str

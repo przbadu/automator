@@ -199,7 +199,7 @@ async def list_documents(
 ):
     cursor = await db.execute(
         """SELECT id, user_id, filename, file_size, mime_type, status, chunk_count,
-                  error_message, created_at, updated_at, content_hash, metadata
+                  error_message, created_at, updated_at, content_hash, metadata, folder_id
            FROM documents WHERE user_id = ? ORDER BY created_at DESC""",
         (current_user["id"],),
     )
@@ -210,6 +210,7 @@ async def list_documents(
                 id=r[0], user_id=r[1], filename=r[2], file_size=r[3], mime_type=r[4],
                 status=r[5], chunk_count=r[6], error_message=r[7], created_at=r[8],
                 updated_at=r[9], content_hash=r[10], metadata=_parse_metadata(r[11]),
+                folder_id=r[12],
             )
             for r in rows
         ]
@@ -278,7 +279,7 @@ async def get_document(
 ):
     cursor = await db.execute(
         """SELECT id, user_id, filename, file_size, mime_type, status, chunk_count,
-                  error_message, created_at, updated_at, content_hash, metadata
+                  error_message, created_at, updated_at, content_hash, metadata, folder_id
            FROM documents WHERE id = ? AND user_id = ?""",
         (document_id, current_user["id"]),
     )
@@ -289,6 +290,7 @@ async def get_document(
         id=row[0], user_id=row[1], filename=row[2], file_size=row[3], mime_type=row[4],
         status=row[5], chunk_count=row[6], error_message=row[7], created_at=row[8],
         updated_at=row[9], content_hash=row[10], metadata=_parse_metadata(row[11]),
+        folder_id=row[12],
     )
 
 
