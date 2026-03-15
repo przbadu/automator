@@ -40,3 +40,7 @@ class FolderTreeNode(BaseModel):
 
 class FolderTreeResponse(BaseModel):
     tree: list[FolderTreeNode]
+
+
+class MoveDocumentRequest(BaseModel):
+    folder_id: str | None = None  # None = move to unfiled
