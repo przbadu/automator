@@ -16,11 +16,6 @@ def _build_intent_system_prompt() -> str:
     """Build the intent classification prompt with conditionally enabled tool categories."""
     tool_categories = []
 
-    if settings.text_to_sql_enabled:
-        tool_categories.append(
-            "- Query their internal app data (documents, threads, messages metadata): \"how many documents\", \"show my threads\", \"largest file\" (no document target needed). ONLY for questions about the user's own data in this system, NOT for external information."
-        )
-
     if settings.web_search_enabled:
         tool_categories.append(
             "- Search the web for current/external information: stock prices, news, weather, sports scores, recent events, anything not in the user's documents (no document target needed)"
@@ -74,7 +69,6 @@ Use ONLY when:
 
 IMPORTANT RULES:
 - If the question is about current events, live data (stock prices, weather, news), or anything requiring up-to-date information → Category 2 (web search)
-- If the question is about counts, statistics, or metadata of the user's own data in this app (documents, threads, files) → Category 2 (SQL query)
 - If the question references a specific document or "my docs" → Category 1 or standard retrieval depending on scope
 - When in doubt between standard retrieval and sub-agent, prefer sub-agent
 
@@ -204,25 +198,6 @@ def _exact_filename_match(user_message: str, user_documents: list[dict]) -> dict
     return None
 
 
-# Patterns that indicate the user wants data/metadata about their app data (SQL tool territory)
-_SQL_PATTERNS = re.compile(
-    r"\b("
-    r"how many (documents?|files?|threads?|messages?|chats?)"
-    r"|count (of |my )?(documents?|files?|threads?|messages?)"
-    r"|list (all )?(my )?(documents?|files?|threads?)"
-    r"|show (all )?(my )?(documents?|files?|threads?)"
-    r"|largest (file|document)"
-    r"|biggest (file|document)"
-    r"|newest (file|document|thread)"
-    r"|oldest (file|document|thread)"
-    r"|recent (documents?|files?|threads?|uploads?)"
-    r"|how many tables"
-    r"|database (schema|tables?|structure)"
-    r"|what('?s| is) in my (database|data)"
-    r")\b",
-    re.IGNORECASE,
-)
-
 # Patterns that indicate web search (current/external info)
 _WEB_SEARCH_PATTERNS = re.compile(
     r"\b("
@@ -257,7 +232,7 @@ async def classify_intent(
     provider: str | None = None,
 ) -> IntentClassification:
     """Classify whether a user message needs sub-agent or normal RAG."""
-    has_tool_capabilities = settings.text_to_sql_enabled or settings.web_search_enabled
+    has_tool_capabilities = settings.web_search_enabled
 
     # No documents and no tool capabilities → no sub-agent needed
     if not user_documents and not has_tool_capabilities:
@@ -296,27 +271,6 @@ async def classify_intent(
                 }
             )
             return result
-
-    # Fast path: SQL-like data queries (no LLM needed)
-    if settings.text_to_sql_enabled and _SQL_PATTERNS.search(user_message):
-        result = IntentClassification(
-            needs_sub_agent=True,
-            target_document_id=None,
-            target_document_filename=None,
-            reasoning="User message matches SQL/data query pattern",
-            tool_hint="query_database",
-        )
-        logger.info("Fast-path SQL pattern match: %s", user_message[:80])
-        get_client().update_current_span(
-            metadata={
-                "needs_sub_agent": True,
-                "target_document": None,
-                "document_count": len(user_documents),
-                "reasoning": result.reasoning,
-                "fast_path": "sql_pattern",
-            }
-        )
-        return result
 
     # Fast path: web search queries (no LLM needed)
     if settings.web_search_enabled and _WEB_SEARCH_PATTERNS.search(user_message):
