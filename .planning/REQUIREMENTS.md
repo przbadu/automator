@@ -20,7 +20,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **DOC-01**: User can upload files into a specific folder
 - [ ] **DOC-02**: User can move files between folders
 - [x] **DOC-03**: System stores full extracted markdown in `document_content` SQLite table during ingestion
-- [ ] **DOC-04**: Existing documents backfilled with full markdown content
+- [x] **DOC-04**: Existing documents backfilled with full markdown content
 
 ### KB Exploration Tools
 
@@ -106,7 +106,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-01 | Phase 2 | Pending |
 | DOC-02 | Phase 2 | Pending |
 | DOC-03 | Phase 1 | Complete |
-| DOC-04 | Phase 1 | Pending |
+| DOC-04 | Phase 1 | Complete |
 | TOOL-01 | Phase 3 | Pending |
 | TOOL-02 | Phase 3 | Pending |
 | TOOL-03 | Phase 3 | Pending |
