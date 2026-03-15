@@ -36,9 +36,9 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Explorer Sub-Agent
 
-- [ ] **AGENT-01**: Explorer sub-agent has access to all KB tools (ls, tree, grep, glob, read) plus existing semantic search
-- [ ] **AGENT-02**: Explorer sub-agent can invoke document analysis sub-agent for deep document analysis
-- [ ] **AGENT-03**: Explorer sub-agent returns synthesized findings, not raw tool output
+- [x] **AGENT-01**: Explorer sub-agent has access to all KB tools (ls, tree, grep, glob, read) plus existing semantic search
+- [x] **AGENT-02**: Explorer sub-agent can invoke document analysis sub-agent for deep document analysis
+- [x] **AGENT-03**: Explorer sub-agent returns synthesized findings, not raw tool output
 - [x] **AGENT-04**: Explorer can be spawned autonomously by main LLM or invoked directly by user
 
 ### Ingestion Interface
@@ -116,9 +116,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TOOL-07 | Phase 1 | Complete |
 | TOOL-08 | Phase 3 | Complete |
 | TOOL-09 | Phase 4 | Complete |
-| AGENT-01 | Phase 4 | Pending |
-| AGENT-02 | Phase 4 | Pending |
-| AGENT-03 | Phase 4 | Pending |
+| AGENT-01 | Phase 4 | Complete |
+| AGENT-02 | Phase 4 | Complete |
+| AGENT-03 | Phase 4 | Complete |
 | AGENT-04 | Phase 4 | Complete |
 | UI-01 | Phase 5 | Pending |
 | UI-02 | Phase 5 | Pending |
