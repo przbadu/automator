@@ -12,6 +12,7 @@ class DocumentResponse(BaseModel):
     error_message: str | None
     content_hash: str | None = None
     metadata: dict | None = None
+    folder_id: str | None = None
     duplicate: bool = False
     updated: bool = False
     created_at: str
@@ -20,3 +21,23 @@ class DocumentResponse(BaseModel):
 
 class DocumentListResponse(BaseModel):
     documents: list[DocumentResponse]
+
+
+class DocumentContentResponse(BaseModel):
+    document_id: str
+    content: str
+    line_count: int
+    char_count: int
+
+
+class FTSSearchResult(BaseModel):
+    document_id: str
+    filename: str
+    snippet: str
+    rank: float
+
+
+class FTSSearchResponse(BaseModel):
+    results: list[FTSSearchResult]
+    query: str
+    total: int

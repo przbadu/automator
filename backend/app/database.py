@@ -146,6 +146,17 @@ async def init_db() -> None:
                 CREATE INDEX IF NOT EXISTS idx_documents_user_filename ON documents(user_id, filename);
             """)
 
+        # Add folder_id column (idempotent migration)
+        try:
+            await db.execute(
+                "ALTER TABLE documents ADD COLUMN folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL"
+            )
+        except Exception:
+            pass  # Column already exists
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_documents_folder_id ON documents(folder_id)"
+        )
+
         await db.commit()
     finally:
         await db.close()
