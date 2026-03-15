@@ -166,7 +166,7 @@ def get_tool_definitions(
         from app.services.sql_tool import SQL_TOOL_ANTHROPIC, SQL_TOOL_OPENAI
         tools.append(SQL_TOOL_ANTHROPIC if format == "anthropic" else SQL_TOOL_OPENAI)
 
-    if settings.web_search_enabled and settings.web_search_url:
+    if settings.web_search_enabled:
         from app.services.web_search_tool import WEB_SEARCH_TOOL_ANTHROPIC, WEB_SEARCH_TOOL_OPENAI
         tools.append(WEB_SEARCH_TOOL_ANTHROPIC if format == "anthropic" else WEB_SEARCH_TOOL_OPENAI)
 

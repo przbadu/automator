@@ -1,4 +1,4 @@
-"""Web search tool: search the web via SearXNG, Tavily, or Brave."""
+"""Web search tool: search the web via SearXNG, Tavily, Brave, or Exa."""
 
 import logging
 
@@ -130,10 +130,44 @@ async def _search_brave(query: str, max_results: int) -> list[dict]:
     return results
 
 
+async def _search_exa(query: str, max_results: int) -> list[dict]:
+    """Search via Exa API."""
+    async with httpx.AsyncClient(timeout=15) as client:
+        resp = await client.post(
+            "https://api.exa.ai/search",
+            headers={
+                "x-api-key": settings.web_search_api_key,
+                "Content-Type": "application/json",
+            },
+            json={
+                "query": query,
+                "numResults": max_results,
+                "type": "auto",
+                "contents": {
+                    "highlights": True,
+                },
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    results = []
+    for r in data.get("results", [])[:max_results]:
+        highlights = r.get("highlights", [])
+        snippet = highlights[0] if highlights else ""
+        results.append({
+            "title": r.get("title", ""),
+            "url": r.get("url", ""),
+            "snippet": snippet,
+        })
+    return results
+
+
 _PROVIDERS = {
     "searxng": _search_searxng,
     "tavily": _search_tavily,
     "brave": _search_brave,
+    "exa": _search_exa,
 }
 
 
@@ -145,7 +179,7 @@ async def search_web(query: str, max_results: int | None = None) -> str:
 
     if not settings.web_search_url and provider == "searxng":
         return "Web search is not configured (no SearXNG URL set)."
-    if not settings.web_search_api_key and provider in ("tavily", "brave"):
+    if not settings.web_search_api_key and provider in ("tavily", "brave", "exa"):
         return f"Web search is not configured (no API key for {provider})."
 
     search_fn = _PROVIDERS.get(provider)

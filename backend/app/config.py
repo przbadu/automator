@@ -62,7 +62,7 @@ class Settings(BaseSettings):
 
     # Web Search
     web_search_enabled: bool = False
-    web_search_provider: str = "searxng"  # searxng | tavily | brave
+    web_search_provider: str = "searxng"  # searxng | tavily | brave | exa
     web_search_url: str = ""
     web_search_api_key: str = ""
     web_search_max_results: int = 5

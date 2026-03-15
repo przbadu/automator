@@ -81,8 +81,9 @@ def validate_sql(query: str) -> tuple[bool, str]:
     if not upper.startswith("SELECT"):
         return False, "Only SELECT queries are allowed"
 
-    # Reject multi-statement
-    if ";" in stripped:
+    # Reject multi-statement (allow single trailing semicolon)
+    without_trailing = stripped.rstrip(";").strip()
+    if ";" in without_trailing:
         return False, "Multi-statement queries are not allowed"
 
     # Reject forbidden keywords
@@ -117,8 +118,23 @@ async def execute_sql_query(
         )
         return f"Query rejected: {reason}"
 
+    # Strip trailing semicolon before execution
+    clean_query = sql_query.rstrip(";").strip()
+
     # Replace {USER_ID} placeholder with parameterized binding
-    parameterized = sql_query.replace("'{USER_ID}'", "?").replace("{USER_ID}", "?")
+    parameterized = clean_query.replace("'{USER_ID}'", "?").replace("{USER_ID}", "?")
+
+    # If no {USER_ID} placeholder was found but query references user_id with a literal value,
+    # replace the literal with a parameterized binding for security and correctness.
+    # This handles LLMs that generate `user_id = '123'` or `user_id = 123` instead of the placeholder.
+    if parameterized == clean_query:
+        # No replacements were made — try replacing literal user_id values
+        parameterized = re.sub(
+            r"user_id\s*=\s*(?:'[^']*'|\"[^\"]*\"|\S+)",
+            "user_id = ?",
+            parameterized,
+            flags=re.IGNORECASE,
+        )
 
     # Count how many ? we need to bind
     param_count = parameterized.count("?")

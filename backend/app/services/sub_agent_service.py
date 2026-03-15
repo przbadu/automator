@@ -36,7 +36,14 @@ Available capabilities:
 {tool_descriptions}
 
 Use the appropriate tool(s) to answer the user's question. Be thorough but efficient.
-"""
+{tool_hint}"""
+
+
+def _get_tool_name(tool: dict, format: str) -> str:
+    """Extract tool name from a tool definition dict."""
+    if format == "anthropic":
+        return tool.get("name", "")
+    return tool.get("function", {}).get("name", "")
 
 
 def _truncate_result(text: str, max_len: int = 500) -> str:
@@ -73,6 +80,7 @@ async def run_sub_agent(
     provider: str | None = None,
     stop_event: asyncio.Event | None = None,
     db: aiosqlite.Connection | None = None,
+    tool_hint: str | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Run sub-agent tool-calling loop, yielding SSE event dicts."""
     effective_model = model or settings.llm_model
@@ -88,6 +96,12 @@ async def run_sub_agent(
         include_document_tools=document_id is not None,
     )
 
+    # When we have a tool_hint, restrict tools to only the hinted tool.
+    # Small LLMs often pick the wrong tool even with explicit instructions,
+    # so giving them only one tool eliminates the choice entirely.
+    if tool_hint and not document_id:
+        tools = [t for t in tools if _get_tool_name(t, tool_format) == tool_hint]
+
     if document_id:
         system_prompt = SUB_AGENT_SYSTEM_PROMPT.format(
             filename=document_filename,
@@ -95,7 +109,10 @@ async def run_sub_agent(
         )
     else:
         tool_desc = _build_tool_description_text(tools, tool_format)
-        system_prompt = GENERAL_TOOLS_SYSTEM_PROMPT.format(tool_descriptions=tool_desc)
+        system_prompt = GENERAL_TOOLS_SYSTEM_PROMPT.format(
+            tool_descriptions=tool_desc,
+            tool_hint="",
+        )
 
     tool_calls_count = 0
     iterations = 0

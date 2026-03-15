@@ -18,12 +18,12 @@ def _build_intent_system_prompt() -> str:
 
     if settings.text_to_sql_enabled:
         tool_categories.append(
-            "- Query their data: \"how many documents\", \"show my threads\", \"largest file\" (no document target needed)"
+            "- Query their internal app data (documents, threads, messages metadata): \"how many documents\", \"show my threads\", \"largest file\" (no document target needed). ONLY for questions about the user's own data in this system, NOT for external information."
         )
 
-    if settings.web_search_enabled and settings.web_search_url:
+    if settings.web_search_enabled:
         tool_categories.append(
-            "- Search the web for current/external information (no document target needed)"
+            "- Search the web for current/external information: stock prices, news, weather, sports scores, recent events, anything not in the user's documents (no document target needed)"
         )
 
     tool_section = ""
@@ -43,22 +43,32 @@ You are an intent classifier for a RAG (Retrieval-Augmented Generation) system.
 The user has the following documents available:
 {{document_list}}
 
-Your task: determine if the user's message requires tool-based assistance or can be answered with standard chunk-based retrieval.
+Your task: classify the user's message into ONE of these categories:
 
-Tool-based assistance is needed when the user wants to:
-- Summarize an entire document (target a specific document)
-- Extract all key points, findings, or sections from a document (target a specific document)
-- Compare or analyze the overall structure of a document
-- Get a comprehensive overview of a document's content{tool_section}
-Standard retrieval is sufficient when the user:
-- Asks a specific factual question answerable from document chunks
-- Asks about content within their documents
-- Asks a general knowledge question unrelated to their documents
+## Category 1: Sub-agent with document target (needs_sub_agent=true, target_document_id=<id>)
+Use when the user wants to analyze a SPECIFIC document:
+- Summarize an entire document
+- Extract all key points, findings, or sections
+- Compare or analyze overall structure
+- "tell me about X in my docs" / "what does [document] say about..."
 
-You MUST respond with valid JSON only, no other text. Use the exact document IDs shown above:
+## Category 2: Sub-agent WITHOUT document target (needs_sub_agent=true, target_document_id=null)
+Use when the user needs tools but NOT a specific document:{tool_section}
+## Category 3: Standard retrieval (needs_sub_agent=false)
+Use ONLY when:
+- A specific factual question can be answered from document chunks
+- A general knowledge question that does NOT need real-time data or tools
+
+IMPORTANT RULES:
+- If the question is about current events, live data (stock prices, weather, news), or anything requiring up-to-date information → Category 2 (web search)
+- If the question is about counts, statistics, or metadata of the user's own data in this app (documents, threads, files) → Category 2 (SQL query)
+- If the question references a specific document or "my docs" → Category 1 or standard retrieval depending on scope
+- When in doubt between standard retrieval and sub-agent, prefer sub-agent
+
+Respond with valid JSON only:
 {{"needs_sub_agent": true, "target_document_id": "exact-id-from-list", "target_document_filename": "exact-filename", "reasoning": "brief explanation"}}
 {tool_json_hint}
-Or if standard retrieval is sufficient:
+Or for standard retrieval:
 {{"needs_sub_agent": false, "target_document_id": null, "target_document_filename": null, "reasoning": "brief explanation"}}
 """
 
@@ -68,6 +78,7 @@ class IntentClassification(BaseModel):
     target_document_id: str | None = None
     target_document_filename: str | None = None
     reasoning: str = ""
+    tool_hint: str | None = None  # "web_search" or "query_database" — guides tool selection for small LLMs
 
 
 def _parse_intent_response(text: str, user_documents: list[dict]) -> IntentClassification:
@@ -169,6 +180,47 @@ def _match_by_filename(
     return None
 
 
+def _exact_filename_match(user_message: str, user_documents: list[dict]) -> dict | None:
+    """Check if the user's message contains an exact document filename."""
+    msg_lower = user_message.lower()
+    # Sort by filename length descending to match the most specific name first
+    for doc in sorted(user_documents, key=lambda d: len(d["filename"]), reverse=True):
+        if doc["filename"].lower() in msg_lower:
+            return doc
+    return None
+
+
+# Patterns that indicate the user wants data/metadata about their app data (SQL tool territory)
+_SQL_PATTERNS = re.compile(
+    r"\b("
+    r"how many (documents?|files?|threads?|messages?|chats?)"
+    r"|count (of |my )?(documents?|files?|threads?|messages?)"
+    r"|list (all )?(my )?(documents?|files?|threads?)"
+    r"|show (all )?(my )?(documents?|files?|threads?)"
+    r"|largest (file|document)"
+    r"|biggest (file|document)"
+    r"|newest (file|document|thread)"
+    r"|oldest (file|document|thread)"
+    r"|recent (documents?|files?|threads?|uploads?)"
+    r"|how many tables"
+    r"|database (schema|tables?|structure)"
+    r"|what('?s| is) in my (database|data)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+# Patterns that indicate web search (current/external info)
+_WEB_SEARCH_PATTERNS = re.compile(
+    r"\b("
+    r"(latest|current|today'?s?|recent|live) (news|stock|price|weather|score|update)"
+    r"|stock price"
+    r"|what('?s| is) (happening|going on)"
+    r"|(search|look up|find) (online|on the web|the web)"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
 @observe(name="classify_intent")
 async def classify_intent(
     user_message: str,
@@ -179,9 +231,7 @@ async def classify_intent(
     provider: str | None = None,
 ) -> IntentClassification:
     """Classify whether a user message needs sub-agent or normal RAG."""
-    has_tool_capabilities = settings.text_to_sql_enabled or (
-        settings.web_search_enabled and settings.web_search_url
-    )
+    has_tool_capabilities = settings.text_to_sql_enabled or settings.web_search_enabled
 
     # No documents and no tool capabilities → no sub-agent needed
     if not user_documents and not has_tool_capabilities:
@@ -194,6 +244,71 @@ async def classify_intent(
                 "needs_sub_agent": False,
                 "document_count": 0,
                 "skipped": "no_documents_no_tools",
+            }
+        )
+        return result
+
+    # Fast path: if user mentions an exact filename, skip LLM and route directly
+    if user_documents:
+        matched_doc = _exact_filename_match(user_message, user_documents)
+        if matched_doc:
+            result = IntentClassification(
+                needs_sub_agent=True,
+                target_document_id=matched_doc["id"],
+                target_document_filename=matched_doc["filename"],
+                reasoning=f"User message contains exact filename: {matched_doc['filename']}",
+            )
+            logger.info("Fast-path filename match: %s", matched_doc["filename"])
+            get_client().update_current_span(
+                metadata={
+                    "needs_sub_agent": True,
+                    "target_document": matched_doc["filename"],
+                    "target_document_id": matched_doc["id"],
+                    "document_count": len(user_documents),
+                    "reasoning": result.reasoning,
+                    "fast_path": True,
+                }
+            )
+            return result
+
+    # Fast path: SQL-like data queries (no LLM needed)
+    if settings.text_to_sql_enabled and _SQL_PATTERNS.search(user_message):
+        result = IntentClassification(
+            needs_sub_agent=True,
+            target_document_id=None,
+            target_document_filename=None,
+            reasoning="User message matches SQL/data query pattern",
+            tool_hint="query_database",
+        )
+        logger.info("Fast-path SQL pattern match: %s", user_message[:80])
+        get_client().update_current_span(
+            metadata={
+                "needs_sub_agent": True,
+                "target_document": None,
+                "document_count": len(user_documents),
+                "reasoning": result.reasoning,
+                "fast_path": "sql_pattern",
+            }
+        )
+        return result
+
+    # Fast path: web search queries (no LLM needed)
+    if settings.web_search_enabled and _WEB_SEARCH_PATTERNS.search(user_message):
+        result = IntentClassification(
+            needs_sub_agent=True,
+            target_document_id=None,
+            target_document_filename=None,
+            reasoning="User message matches web search pattern",
+            tool_hint="web_search",
+        )
+        logger.info("Fast-path web search pattern match: %s", user_message[:80])
+        get_client().update_current_span(
+            metadata={
+                "needs_sub_agent": True,
+                "target_document": None,
+                "document_count": len(user_documents),
+                "reasoning": result.reasoning,
+                "fast_path": "web_search_pattern",
             }
         )
         return result

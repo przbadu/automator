@@ -2,6 +2,8 @@ import type { ReactNode } from "react"
 import type { User } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { Moon, Sun } from "lucide-react"
+import { useTheme } from "@/hooks/useTheme"
 
 interface AppSidebarProps {
   user: User
@@ -11,6 +13,8 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSidebarProps) {
+  const { resolvedTheme, setTheme } = useTheme()
+
   return (
     <div className="w-64 border-r flex flex-col shrink-0 h-full overflow-hidden bg-sidebar">
       <div className="flex-1 overflow-hidden min-h-0">
@@ -25,6 +29,15 @@ export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSide
         >
           Logout {user.email}
         </button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+        >
+          {resolvedTheme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+        </Button>
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onOpenSettings} title="Settings">
           <svg
             xmlns="http://www.w3.org/2000/svg"

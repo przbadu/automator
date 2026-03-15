@@ -243,6 +243,7 @@ async def send_message(
     use_sub_agent = False
     target_document_id = None
     target_document_filename = None
+    tool_hint = None
 
     if settings.sub_agent_enabled:
         try:
@@ -264,47 +265,54 @@ async def send_message(
                 provider=llm_provider,
             )
             logger.info(
-                "Sub-agent intent: needs=%s, doc_id=%s, doc_name=%s",
-                intent.needs_sub_agent, intent.target_document_id, intent.target_document_filename,
+                "Sub-agent intent: needs=%s, doc_id=%s, doc_name=%s, tool_hint=%s",
+                intent.needs_sub_agent, intent.target_document_id, intent.target_document_filename, intent.tool_hint,
             )
             if intent.needs_sub_agent:
                 use_sub_agent = True
                 target_document_id = intent.target_document_id
                 target_document_filename = intent.target_document_filename
+                tool_hint = intent.tool_hint
                 logger.info(
-                    "Sub-agent activated (doc=%s, id=%s)",
+                    "Sub-agent activated (doc=%s, id=%s, hint=%s)",
                     target_document_filename,
                     target_document_id,
+                    tool_hint,
                 )
         except Exception:
             logger.warning("Intent classification failed, using normal pipeline", exc_info=True)
 
-    # Retrieve relevant document context (always run for source citations)
+    # Retrieve relevant document context
+    # Skip retrieval for sub-agent queries that don't target a specific document
+    # (e.g. web search, SQL queries) — those sources would be irrelevant noise
     system_message = None
     sources: list[dict] = []
-    try:
-        retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
-        if retrieval_results:
-            context_chunks = [
-                {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
-                for r in retrieval_results
-            ]
-            # Only build RAG system message for normal path (sub-agent has its own context)
-            if not use_sub_agent:
-                system_message = build_rag_system_message(context_chunks)
-            sources = [
-                {
-                    "filename": r.document_filename,
-                    "chunk_index": r.chunk_index,
-                    "preview": r.chunk_content[:200],
-                    "relevance_score": round(r.relevance_score, 3),
-                    "document_type": r.document_type,
-                    "document_id": r.document_id,
-                }
-                for r in retrieval_results
-            ]
-    except Exception:
-        logger.warning("Retrieval failed, proceeding without context", exc_info=True)
+    skip_retrieval = use_sub_agent and not target_document_id
+
+    if not skip_retrieval:
+        try:
+            retrieval_results = await retrieve_relevant_chunks(search_query, current_user["id"])
+            if retrieval_results:
+                context_chunks = [
+                    {"filename": r.document_filename, "chunk_index": r.chunk_index, "content": r.chunk_content, "document_type": r.document_type}
+                    for r in retrieval_results
+                ]
+                # Only build RAG system message for normal path (sub-agent has its own context)
+                if not use_sub_agent:
+                    system_message = build_rag_system_message(context_chunks)
+                sources = [
+                    {
+                        "filename": r.document_filename,
+                        "chunk_index": r.chunk_index,
+                        "preview": r.chunk_content[:200],
+                        "relevance_score": round(r.relevance_score, 3),
+                        "document_type": r.document_type,
+                        "document_id": r.document_id,
+                    }
+                    for r in retrieval_results
+                ]
+        except Exception:
+            logger.warning("Retrieval failed, proceeding without context", exc_info=True)
 
     # Register stop signal for this thread
     stop_event = asyncio.Event()
@@ -334,6 +342,7 @@ async def send_message(
                     provider=llm_provider,
                     stop_event=stop_event,
                     db=db,
+                    tool_hint=tool_hint,
                 ):
                     if event["type"] == "delta":
                         assistant_content += event.get("content", "")
