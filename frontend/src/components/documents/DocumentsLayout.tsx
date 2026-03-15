@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useDocuments } from "@/hooks/useDocuments"
 import { useFolders } from "@/hooks/useFolders"
+import { useSidebar } from "@/hooks/useSidebar"
 import type { FolderTreeNode } from "@/types"
 import { DocumentUpload } from "./DocumentUpload"
 import { DocumentList } from "./DocumentList"
@@ -9,6 +10,7 @@ import { CreateFolderDialog } from "./CreateFolderDialog"
 import { DeleteFolderDialog } from "./DeleteFolderDialog"
 import { MoveToFolderDialog } from "./MoveToFolderDialog"
 import { AppSidebar } from "@/components/layout/AppSidebar"
+import { MobileHeader } from "@/components/layout/MobileHeader"
 import { ArrowUpDown, ChevronRight, Folder as FolderIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -107,6 +109,7 @@ export function DocumentsLayout({ onLogout, userEmail, onNavigateToChat, onOpenS
   const [dialogState, setDialogState] = useState<DialogState>({ type: "closed" })
   const [moveDialogState, setMoveDialogState] = useState<MoveDialogState>(null)
   const [sortAsc, setSortAsc] = useState(true)
+  const sidebar = useSidebar()
 
   useEffect(() => {
     loadDocuments()
@@ -199,16 +202,28 @@ export function DocumentsLayout({ onLogout, userEmail, onNavigateToChat, onOpenS
     return result
   }
 
+  const handleSelectFolder = (folderId: string | null) => {
+    setSelectedFolderId(folderId)
+    sidebar.close()
+  }
+
   const closeDialog = () => setDialogState({ type: "closed" })
 
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
-      <AppSidebar user={{ id: "", email: userEmail, created_at: "" }} onLogout={onLogout} onOpenSettings={onOpenSettings}>
+      <AppSidebar
+        user={{ id: "", email: userEmail, created_at: "" }}
+        onLogout={onLogout}
+        onOpenSettings={onOpenSettings}
+        open={sidebar.open}
+        isMobile={sidebar.isMobile}
+        onClose={sidebar.close}
+      >
         <div className="flex flex-col h-full">
           <div className="p-3">
             <button
-              onClick={onNavigateToChat}
+              onClick={() => { sidebar.close(); onNavigateToChat() }}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -222,7 +237,7 @@ export function DocumentsLayout({ onLogout, userEmail, onNavigateToChat, onOpenS
             <FolderTree
               tree={tree}
               selectedFolderId={selectedFolderId}
-              onSelect={setSelectedFolderId}
+              onSelect={handleSelectFolder}
               onCreateFolder={handleCreateFolder}
               onRenameFolder={handleRenameFolder}
               onDeleteFolder={handleDeleteFolder}
@@ -234,9 +249,15 @@ export function DocumentsLayout({ onLogout, userEmail, onNavigateToChat, onOpenS
 
       {/* Main content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {/* Mobile header */}
+        <MobileHeader
+          onToggleSidebar={sidebar.toggle}
+          title={selectedFolderName ?? "Documents"}
+        />
+
         {/* Header with breadcrumb and sort */}
-        <div className="px-4 py-3 border-b shrink-0 bg-background flex items-center justify-between gap-2">
-          <nav className="flex items-center gap-1 text-sm min-w-0">
+        <div className="px-3 md:px-4 py-2.5 md:py-3 border-b shrink-0 bg-background flex items-center justify-between gap-2">
+          <nav className="flex items-center gap-1 text-sm min-w-0 overflow-x-auto">
             <button
               onClick={() => setSelectedFolderId(null)}
               className={`shrink-0 font-semibold transition-colors ${
@@ -271,7 +292,7 @@ export function DocumentsLayout({ onLogout, userEmail, onNavigateToChat, onOpenS
             title={sortAsc ? "Sorted A-Z (click to reverse)" : "Sorted Z-A (click to reverse)"}
           >
             <ArrowUpDown className="size-3" />
-            Name {sortAsc ? "A-Z" : "Z-A"}
+            <span className="hidden sm:inline">Name</span> {sortAsc ? "A-Z" : "Z-A"}
           </Button>
         </div>
 
@@ -290,7 +311,7 @@ export function DocumentsLayout({ onLogout, userEmail, onNavigateToChat, onOpenS
                 <button
                   key={folder.id}
                   onClick={() => setSelectedFolderId(folder.id)}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 w-full text-left transition-colors group"
+                  className="flex items-center gap-3 px-3 md:px-4 py-3 hover:bg-muted/50 w-full text-left transition-colors group"
                 >
                   <FolderIcon className="size-5 text-muted-foreground group-hover:text-foreground shrink-0" />
                   <div className="min-w-0 flex-1">

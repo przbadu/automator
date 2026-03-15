@@ -29,8 +29,8 @@ export function MessageList({ messages, streamingContent, streamingSources, isWa
   const showStreaming = streamingContent || (subAgentActivity && subAgentActivity.started)
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
-      <div className="space-y-4 max-w-3xl mx-auto">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto p-2 md:p-4">
+      <div className="space-y-3 md:space-y-4 max-w-3xl mx-auto">
         {messages.map((msg) => (
           <MessageBubble key={msg.id} role={msg.role} content={msg.content} metadata={msg.metadata} />
         ))}

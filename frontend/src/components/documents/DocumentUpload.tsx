@@ -92,7 +92,7 @@ export function DocumentUpload({ onUpload, uploading, folderId, folderName }: Pr
   const isUploading = uploading || uploadingCount > 0
 
   return (
-    <div className="p-4">
+    <div className="p-3 md:p-4">
       <div
         onDragOver={(e) => {
           e.preventDefault()

@@ -31,7 +31,7 @@ export function MessageInput({ onSend, onStop, disabled, streaming }: MessageInp
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border-t bg-background p-4">
+    <form onSubmit={handleSubmit} className="border-t bg-background p-2 md:p-4">
       <div className="flex gap-2 max-w-3xl mx-auto">
         <textarea
           ref={textareaRef}

@@ -100,7 +100,7 @@ export function DocumentList({ documents, onDelete, onMoveDocument }: Props) {
     <div className="divide-y">
       {documents.map((doc) => (
         <ContextMenu key={doc.id}>
-          <ContextMenuTrigger className="flex items-start justify-between px-4 py-3 hover:bg-muted/50 w-full">
+          <ContextMenuTrigger className="flex items-start justify-between px-3 md:px-4 py-3 hover:bg-muted/50 w-full">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium truncate">{doc.filename}</span>

@@ -17,12 +17,20 @@ interface AppSidebarProps {
   onOpenSettings: () => void
   onOpenDocuments?: () => void
   children: ReactNode
+  open?: boolean
+  isMobile?: boolean
+  onClose?: () => void
 }
 
-export function AppSidebar({ user, onLogout, onOpenSettings, onOpenDocuments, children }: AppSidebarProps) {
+export function AppSidebar({ user, onLogout, onOpenSettings, onOpenDocuments, children, open = true, isMobile = false, onClose }: AppSidebarProps) {
   const { resolvedTheme, setTheme } = useTheme()
 
-  return (
+  const handleNavigate = (fn: () => void) => {
+    onClose?.()
+    fn()
+  }
+
+  const sidebarContent = (
     <div className="w-64 border-r flex flex-col shrink-0 h-full overflow-hidden bg-sidebar">
       <div className="flex-1 overflow-hidden min-h-0">
         {children}
@@ -42,12 +50,12 @@ export function AppSidebar({ user, onLogout, onOpenSettings, onOpenDocuments, ch
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-56">
-            <DropdownMenuItem onClick={onOpenSettings}>
+            <DropdownMenuItem onClick={() => handleNavigate(onOpenSettings)}>
               <Settings className="size-4" />
               Settings
             </DropdownMenuItem>
             {onOpenDocuments && (
-              <DropdownMenuItem onClick={onOpenDocuments}>
+              <DropdownMenuItem onClick={() => handleNavigate(onOpenDocuments)}>
                 <FolderOpen className="size-4" />
                 Documents
               </DropdownMenuItem>
@@ -65,5 +73,31 @@ export function AppSidebar({ user, onLogout, onOpenSettings, onOpenDocuments, ch
         </DropdownMenu>
       </div>
     </div>
+  )
+
+  // Desktop: render inline
+  if (!isMobile) {
+    return sidebarContent
+  }
+
+  // Mobile: overlay with backdrop
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 ${
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+      />
+      {/* Sidebar drawer */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-out ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </div>
+    </>
   )
 }
