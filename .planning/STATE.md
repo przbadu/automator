@@ -10,7 +10,7 @@ progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 7
-  completed_plans: 7
+  completed_plans: 9
   percent: 80
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 ## Current Position
 
 Phase: 5 of 5 (Folder Management UI)
-Plan: 1 of 1 in current phase
+Plan: 1 of 3 in current phase
 Status: Completed 05-01
 Last activity: 2026-03-15 -- Completed 05-01-PLAN.md (Folder tree UI with CRUD dialogs)
 
@@ -53,6 +53,8 @@ Progress: [████████░░] 80%
 - Trend: Accelerating
 
 *Updated after each plan completion*
+| Phase 04 P01 | 3min | 2 tasks | 4 files |
+| Phase 04 P02 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +79,10 @@ Recent decisions affecting current work:
 - [03-01]: Tree uses recursive CTE with entry counting for truncation
 - [03-02]: Used POST for all tool endpoints (tool invocations, not resource fetches)
 - [03-02]: No try/except in router -- service functions return errors in result models
+- [Phase 04]: KB semantic search uses user_id-only ChromaDB filter for cross-KB search
+- [Phase 04]: Agent grep limited to max_matches=10 for LLM context efficiency
+- [Phase 04]: Explorer is a mode in sub_agent_service.py reusing existing loops, not a separate service
+- [Phase 04]: analyze_document collects output synchronously with 4000-char limit for context efficiency
 - [05-01]: Used discriminated union for dialog state management (create/rename/delete/closed)
 - [05-01]: Reused CreateFolderDialog for both create and rename via initialName prop
 - [05-01]: Chevron click stops propagation to toggle expand without changing selection

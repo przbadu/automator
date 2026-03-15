@@ -37,6 +37,11 @@ If tools are needed but no specific document:
 {{"needs_sub_agent": true, "target_document_id": null, "target_document_filename": null, "reasoning": "..."}}
 """
 
+    tool_json_hint += """
+If the user wants to explore, browse, or search across their knowledge base:
+{{"needs_sub_agent": true, "needs_explorer": true, "target_document_id": null, "target_document_filename": null, "reasoning": "..."}}
+"""
+
     return f"""\
 You are an intent classifier for a RAG (Retrieval-Augmented Generation) system.
 
@@ -54,7 +59,15 @@ Use when the user wants to analyze a SPECIFIC document:
 
 ## Category 2: Sub-agent WITHOUT document target (needs_sub_agent=true, target_document_id=null)
 Use when the user needs tools but NOT a specific document:{tool_section}
-## Category 3: Standard retrieval (needs_sub_agent=false)
+## Category 3: KB Explorer (needs_sub_agent=true, needs_explorer=true)
+Use when the user wants to explore, browse, search across, or navigate their knowledge base:
+- "what documents do I have about X?"
+- "find all PDFs mentioning Y"
+- "show me the structure of my knowledge base"
+- "search my documents for Z"
+- "what's in my knowledge base?"
+
+## Category 4: Standard retrieval (needs_sub_agent=false)
 Use ONLY when:
 - A specific factual question can be answered from document chunks
 - A general knowledge question that does NOT need real-time data or tools
@@ -75,6 +88,7 @@ Or for standard retrieval:
 
 class IntentClassification(BaseModel):
     needs_sub_agent: bool
+    needs_explorer: bool = False
     target_document_id: str | None = None
     target_document_filename: str | None = None
     reasoning: str = ""
@@ -220,6 +234,18 @@ _WEB_SEARCH_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+# Patterns that indicate KB exploration (browsing/searching the knowledge base)
+_KB_EXPLORER_PATTERNS = re.compile(
+    r"\b("
+    r"(find|search|look for|grep|search for) .*(documents?|files?|knowledge base|kb)"
+    r"|what (documents?|files?) .*(have|contain|about)"
+    r"|(show|list|browse|explore) .*(my )?(documents?|files?|folders?|knowledge base|kb)"
+    r"|folder (tree|structure|hierarchy|layout)"
+    r"|(what'?s|what is) in my (knowledge base|kb|documents?|folders?)"
+    r")\b",
+    re.IGNORECASE,
+)
+
 
 @observe(name="classify_intent")
 async def classify_intent(
@@ -309,6 +335,28 @@ async def classify_intent(
                 "document_count": len(user_documents),
                 "reasoning": result.reasoning,
                 "fast_path": "web_search_pattern",
+            }
+        )
+        return result
+
+    # Fast path: KB exploration queries (no LLM needed)
+    if _KB_EXPLORER_PATTERNS.search(user_message):
+        result = IntentClassification(
+            needs_sub_agent=True,
+            needs_explorer=True,
+            target_document_id=None,
+            target_document_filename=None,
+            reasoning="User message matches KB exploration pattern",
+        )
+        logger.info("Fast-path KB explorer pattern match: %s", user_message[:80])
+        get_client().update_current_span(
+            metadata={
+                "needs_sub_agent": True,
+                "needs_explorer": True,
+                "target_document": None,
+                "document_count": len(user_documents),
+                "reasoning": result.reasoning,
+                "fast_path": "kb_explorer_pattern",
             }
         )
         return result

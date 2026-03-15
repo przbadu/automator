@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     sub_agent_enabled: bool = True
     sub_agent_max_iterations: int = 5
     sub_agent_max_chunks_per_read: int = 20
+    explorer_max_iterations: int = 8
 
     # Text-to-SQL
     text_to_sql_enabled: bool = True

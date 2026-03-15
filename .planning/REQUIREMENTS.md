@@ -32,14 +32,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **TOOL-06**: Agent can use `read(path, offset, limit)` to read specific line range with line numbers
 - [x] **TOOL-07**: SQLite FTS5 virtual table indexed on extracted markdown for fast keyword search in grep
 - [x] **TOOL-08**: All tools enforce user_id scoping — users only see their own content
-- [ ] **TOOL-09**: LLM automatically selects exploration tools based on user's question
+- [x] **TOOL-09**: LLM automatically selects exploration tools based on user's question
 
 ### Explorer Sub-Agent
 
-- [ ] **AGENT-01**: Explorer sub-agent has access to all KB tools (ls, tree, grep, glob, read) plus existing semantic search
-- [ ] **AGENT-02**: Explorer sub-agent can invoke document analysis sub-agent for deep document analysis
-- [ ] **AGENT-03**: Explorer sub-agent returns synthesized findings, not raw tool output
-- [ ] **AGENT-04**: Explorer can be spawned autonomously by main LLM or invoked directly by user
+- [x] **AGENT-01**: Explorer sub-agent has access to all KB tools (ls, tree, grep, glob, read) plus existing semantic search
+- [x] **AGENT-02**: Explorer sub-agent can invoke document analysis sub-agent for deep document analysis
+- [x] **AGENT-03**: Explorer sub-agent returns synthesized findings, not raw tool output
+- [x] **AGENT-04**: Explorer can be spawned autonomously by main LLM or invoked directly by user
 
 ### Ingestion Interface
 
@@ -115,11 +115,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TOOL-06 | Phase 3 | Complete |
 | TOOL-07 | Phase 1 | Complete |
 | TOOL-08 | Phase 3 | Complete |
-| TOOL-09 | Phase 4 | Pending |
-| AGENT-01 | Phase 4 | Pending |
-| AGENT-02 | Phase 4 | Pending |
-| AGENT-03 | Phase 4 | Pending |
-| AGENT-04 | Phase 4 | Pending |
+| TOOL-09 | Phase 4 | Complete |
+| AGENT-01 | Phase 4 | Complete |
+| AGENT-02 | Phase 4 | Complete |
+| AGENT-03 | Phase 4 | Complete |
+| AGENT-04 | Phase 4 | Complete |
 | UI-01 | Phase 5 | Complete |
 | UI-02 | Phase 5 | Complete |
 | UI-03 | Phase 5 | Pending |
