@@ -241,6 +241,7 @@ async def send_message(
 
     # Intent classification for sub-agent routing
     use_sub_agent = False
+    use_explorer = False
     target_document_id = None
     target_document_filename = None
     tool_hint = None
@@ -270,14 +271,16 @@ async def send_message(
             )
             if intent.needs_sub_agent:
                 use_sub_agent = True
+                use_explorer = intent.needs_explorer
                 target_document_id = intent.target_document_id
                 target_document_filename = intent.target_document_filename
                 tool_hint = intent.tool_hint
                 logger.info(
-                    "Sub-agent activated (doc=%s, id=%s, hint=%s)",
+                    "Sub-agent activated (doc=%s, id=%s, hint=%s, explorer=%s)",
                     target_document_filename,
                     target_document_id,
                     tool_hint,
+                    use_explorer,
                 )
         except Exception:
             logger.warning("Intent classification failed, using normal pipeline", exc_info=True)
@@ -343,6 +346,7 @@ async def send_message(
                     stop_event=stop_event,
                     db=db,
                     tool_hint=tool_hint,
+                    mode="explorer" if use_explorer else None,
                 ):
                     if event["type"] == "delta":
                         assistant_content += event.get("content", "")

@@ -29,6 +29,30 @@ Use the available tools to read and search the document, then provide a comprehe
 Read enough of the document to fully answer the question. Be thorough but efficient — don't re-read chunks you've already seen.
 """
 
+EXPLORER_SYSTEM_PROMPT = """\
+You are a knowledge base explorer. You can navigate and search the user's document collection \
+to answer their questions.
+
+Available tools:
+- kb_ls(path): List files and subfolders at a path
+- kb_tree(path, depth, limit): Get hierarchical view of the KB structure
+- kb_grep(pattern, path, case_insensitive): Search document contents by regex pattern
+- kb_glob(pattern): Match documents by filename pattern (e.g., '*.pdf', 'reports/*.md')
+- kb_read(path, offset, limit): Read document content (full or line range)
+- kb_semantic_search(query, top_k): Find semantically similar content across all documents
+- analyze_document(document_id, question): Delegate deep single-document analysis to a specialist sub-agent
+
+Strategy:
+1. Start broad (kb_tree or kb_ls) to understand what's available
+2. Narrow down with kb_grep, kb_glob, or kb_semantic_search to find relevant documents
+3. Read specific documents with kb_read for detailed information
+4. Use analyze_document only when deep analysis of a single document is needed
+
+IMPORTANT: Always synthesize your findings into a clear, natural language response. \
+Never return raw tool output as your final answer. Explain what you found and how it answers \
+the user's question.
+"""
+
 GENERAL_TOOLS_SYSTEM_PROMPT = """\
 You are a helpful assistant with access to tools.
 
@@ -81,38 +105,62 @@ async def run_sub_agent(
     stop_event: asyncio.Event | None = None,
     db: aiosqlite.Connection | None = None,
     tool_hint: str | None = None,
+    mode: str | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Run sub-agent tool-calling loop, yielding SSE event dicts."""
     effective_model = model or settings.llm_model
     effective_client = client or openai_client
 
-    mode = "document_analysis" if document_id else "tools"
-    yield {"type": "sub_agent_start", "document": document_filename, "mode": mode}
+    if mode == "explorer":
+        effective_mode = "explorer"
+    elif document_id:
+        effective_mode = "document_analysis"
+    else:
+        effective_mode = "tools"
+    yield {"type": "sub_agent_start", "document": document_filename, "mode": effective_mode}
 
     # Determine tool format and build tool list
     tool_format = "anthropic" if provider == "anthropic" else "openai"
-    tools = get_tool_definitions(
-        format=tool_format,
-        include_document_tools=document_id is not None,
-    )
 
-    # When we have a tool_hint, restrict tools to only the hinted tool.
-    # Small LLMs often pick the wrong tool even with explicit instructions,
-    # so giving them only one tool eliminates the choice entirely.
-    if tool_hint and not document_id:
-        tools = [t for t in tools if _get_tool_name(t, tool_format) == tool_hint]
-
-    if document_id:
+    if mode == "explorer":
+        # Explorer mode: KB tools only (no document-specific tools)
+        tools = get_tool_definitions(
+            format=tool_format,
+            include_document_tools=False,
+            include_kb_tools=True,
+        )
+        system_prompt = EXPLORER_SYSTEM_PROMPT
+    elif document_id:
+        tools = get_tool_definitions(
+            format=tool_format,
+            include_document_tools=True,
+        )
         system_prompt = SUB_AGENT_SYSTEM_PROMPT.format(
             filename=document_filename,
             document_id=document_id,
         )
     else:
+        tools = get_tool_definitions(
+            format=tool_format,
+            include_document_tools=document_id is not None,
+        )
+        # When we have a tool_hint, restrict tools to only the hinted tool.
+        # Small LLMs often pick the wrong tool even with explicit instructions,
+        # so giving them only one tool eliminates the choice entirely.
+        if tool_hint:
+            tools = [t for t in tools if _get_tool_name(t, tool_format) == tool_hint]
         tool_desc = _build_tool_description_text(tools, tool_format)
         system_prompt = GENERAL_TOOLS_SYSTEM_PROMPT.format(
             tool_descriptions=tool_desc,
             tool_hint="",
         )
+
+    # Use explorer_max_iterations for explorer mode
+    max_iters = (
+        settings.explorer_max_iterations
+        if effective_mode == "explorer"
+        else settings.sub_agent_max_iterations
+    )
 
     tool_calls_count = 0
     iterations = 0
@@ -131,6 +179,7 @@ async def run_sub_agent(
             stop_event=stop_event,
             db=db,
             tools=tools,
+            max_iterations=max_iters,
         ):
             if event["type"] == "sub_agent_tool_call":
                 tool_calls_count += 1
@@ -154,6 +203,7 @@ async def run_sub_agent(
             stop_event=stop_event,
             db=db,
             tools=tools,
+            max_iterations=max_iters,
         ):
             if event["type"] == "sub_agent_tool_call":
                 tool_calls_count += 1
@@ -169,7 +219,7 @@ async def run_sub_agent(
 
     get_client().update_current_span(
         metadata={
-            "mode": mode,
+            "mode": effective_mode,
             "document_id": document_id,
             "document_filename": document_filename,
             "tool_calls_count": tool_calls_count,
@@ -191,6 +241,7 @@ async def _run_openai_loop(
     stop_event: asyncio.Event | None,
     db: aiosqlite.Connection | None,
     tools: list[dict] | None = None,
+    max_iterations: int | None = None,
 ) -> AsyncGenerator[dict, None]:
     """OpenAI-compatible tool-calling loop."""
     messages = [{"role": "system", "content": system_prompt}]
@@ -202,7 +253,8 @@ async def _run_openai_loop(
 
     messages.append({"role": "user", "content": user_message})
 
-    max_iterations = settings.sub_agent_max_iterations
+    if max_iterations is None:
+        max_iterations = settings.sub_agent_max_iterations
     iteration = 0
 
     while iteration < max_iterations:
@@ -291,7 +343,10 @@ async def _run_openai_loop(
                 "args": args,
             }
 
-            result = await execute_tool(tool_name, args, user_id, db)
+            result = await execute_tool(
+                tool_name, args, user_id, db,
+                client=client, model=model,
+            )
 
             yield {
                 "type": "sub_agent_tool_result",
@@ -340,6 +395,7 @@ async def _run_anthropic_loop(
     stop_event: asyncio.Event | None,
     db: aiosqlite.Connection | None,
     tools: list[dict] | None = None,
+    max_iterations: int | None = None,
 ) -> AsyncGenerator[dict, None]:
     """Anthropic tool-calling loop."""
     messages = []
@@ -351,7 +407,8 @@ async def _run_anthropic_loop(
 
     messages.append({"role": "user", "content": user_message})
 
-    max_iterations = settings.sub_agent_max_iterations
+    if max_iterations is None:
+        max_iterations = settings.sub_agent_max_iterations
     iteration = 0
 
     while iteration < max_iterations:
@@ -405,7 +462,10 @@ async def _run_anthropic_loop(
                     "args": args,
                 }
 
-                result = await execute_tool(tool_name, args, user_id, db)
+                result = await execute_tool(
+                    tool_name, args, user_id, db,
+                    client=client, model=model, provider="anthropic",
+                )
 
                 yield {
                     "type": "sub_agent_tool_result",
