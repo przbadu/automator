@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import type { MessageMetadata } from "@/types"
+import { MarkdownContent } from "./MarkdownContent"
 import { SourceCitations } from "./SourceCitations"
 import { SubAgentActivity } from "./SubAgentActivity"
 
@@ -40,13 +41,13 @@ export function MessageBubble({ role, content, metadata }: MessageBubbleProps) {
         )}
         <div
           className={cn(
-            "rounded-lg px-4 py-2 text-sm whitespace-pre-wrap",
+            "text-sm",
             isUser
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground",
+              ? "rounded-lg px-4 py-2 bg-primary text-primary-foreground whitespace-pre-wrap"
+              : "px-4 py-2 text-foreground",
           )}
         >
-          {content}
+          {isUser ? content : <MarkdownContent content={content} />}
         </div>
         {sources.length > 0 && <SourceCitations sources={sources} />}
         {hasSubAgent && (metadata?.target_document || persistedActivity?.mode === "tools") && (

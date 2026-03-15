@@ -1,4 +1,5 @@
 import type { SourceCitation, SubAgentActivity } from "@/types"
+import { MarkdownContent } from "./MarkdownContent"
 import { SourceCitations } from "./SourceCitations"
 import { SubAgentActivity as SubAgentActivityPanel } from "./SubAgentActivity"
 
@@ -19,8 +20,8 @@ export function StreamingMessage({ content, sources, subAgentActivity }: Streami
           <SubAgentActivityPanel activity={subAgentActivity} />
         )}
         {content && (
-          <div className="rounded-lg px-4 py-2 text-sm whitespace-pre-wrap bg-muted text-muted-foreground">
-            {content}
+          <div className="px-4 py-2 text-sm text-foreground">
+            <MarkdownContent content={content} />
             <span className="inline-block w-1.5 h-4 ml-0.5 bg-foreground/50 animate-pulse" />
           </div>
         )}

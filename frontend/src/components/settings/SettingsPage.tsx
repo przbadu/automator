@@ -1,38 +1,27 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { User } from "@/types"
-import { useDocuments } from "@/hooks/useDocuments"
 import { AppSidebar } from "@/components/layout/AppSidebar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { DocumentUpload } from "@/components/documents/DocumentUpload"
-import { DocumentList } from "@/components/documents/DocumentList"
 import { LLMConfigPanel } from "./LLMConfigPanel"
 import { MetadataSchemaPanel } from "./MetadataSchemaPanel"
 import { cn } from "@/lib/utils"
 
-type SettingsTab = "llm" | "metadata" | "documents"
+type SettingsTab = "llm" | "metadata"
 
 const SETTINGS_MENU: { key: SettingsTab; label: string }[] = [
   { key: "llm", label: "LLM Configurations" },
   { key: "metadata", label: "Metadata Schema" },
-  { key: "documents", label: "Documents" },
 ]
 
 interface Props {
   user: User
   onLogout: () => void
   onNavigateToChat: () => void
+  onNavigateToDocuments: () => void
 }
 
-export function SettingsPage({ user, onLogout, onNavigateToChat }: Props) {
+export function SettingsPage({ user, onLogout, onNavigateToChat, onNavigateToDocuments }: Props) {
   const [tab, setTab] = useState<SettingsTab>("llm")
-  const { documents, uploading, loadDocuments, uploadDocument, deleteDocument } =
-    useDocuments()
-
-  useEffect(() => {
-    if (tab === "documents") {
-      loadDocuments()
-    }
-  }, [tab, loadDocuments])
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -77,6 +66,12 @@ export function SettingsPage({ user, onLogout, onNavigateToChat }: Props) {
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={onNavigateToDocuments}
+                className="w-full text-left rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              >
+                Documents & Folders
+              </button>
             </div>
           </ScrollArea>
         </div>
@@ -93,16 +88,8 @@ export function SettingsPage({ user, onLogout, onNavigateToChat }: Props) {
           <div className="max-w-3xl mx-auto p-4">
             {tab === "llm" ? (
               <LLMConfigPanel />
-            ) : tab === "metadata" ? (
-              <MetadataSchemaPanel />
             ) : (
-              <div>
-                <DocumentUpload
-                  onUpload={uploadDocument}
-                  uploading={uploading}
-                />
-                <DocumentList documents={documents} onDelete={deleteDocument} />
-              </div>
+              <MetadataSchemaPanel />
             )}
           </div>
         </div>

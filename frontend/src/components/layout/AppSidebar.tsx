@@ -1,18 +1,25 @@
 import type { ReactNode } from "react"
 import type { User } from "@/types"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Moon, Sun } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { ChevronUp, FolderOpen, LogOut, Moon, Settings, Sun } from "lucide-react"
 import { useTheme } from "@/hooks/useTheme"
 
 interface AppSidebarProps {
   user: User
   onLogout: () => void
   onOpenSettings: () => void
+  onOpenDocuments?: () => void
   children: ReactNode
 }
 
-export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSidebarProps) {
+export function AppSidebar({ user, onLogout, onOpenSettings, onOpenDocuments, children }: AppSidebarProps) {
   const { resolvedTheme, setTheme } = useTheme()
 
   return (
@@ -21,39 +28,41 @@ export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSide
         {children}
       </div>
       <Separator />
-      <div className="p-3 flex items-center gap-2 shrink-0 min-w-0">
-        <button
-          onClick={onLogout}
-          className="flex-1 min-w-0 text-xs text-muted-foreground hover:text-foreground truncate text-left transition-colors"
-          title={`Logout ${user.email}`}
-        >
-          Logout {user.email}
-        </button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 shrink-0"
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
-        >
-          {resolvedTheme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-        </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onOpenSettings} title="Settings">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </Button>
+      <div className="p-2 shrink-0">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 w-full rounded-md px-2 py-2 text-sm hover:bg-accent transition-colors min-w-0">
+              <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 text-xs font-semibold uppercase">
+                {user.email.charAt(0)}
+              </div>
+              <span className="flex-1 min-w-0 text-left text-sm truncate text-foreground">
+                {user.email}
+              </span>
+              <ChevronUp className="size-4 text-muted-foreground shrink-0" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuItem onClick={onOpenSettings}>
+              <Settings className="size-4" />
+              Settings
+            </DropdownMenuItem>
+            {onOpenDocuments && (
+              <DropdownMenuItem onClick={onOpenDocuments}>
+                <FolderOpen className="size-4" />
+                Documents
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+              {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+              {resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onLogout}>
+              <LogOut className="size-4" />
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )

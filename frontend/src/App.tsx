@@ -5,12 +5,14 @@ import { LoginForm } from "@/components/auth/LoginForm"
 import { SignUpForm } from "@/components/auth/SignUpForm"
 import { ChatLayout } from "@/components/chat/ChatLayout"
 import { SettingsPage } from "@/components/settings/SettingsPage"
+import { DocumentsLayout } from "@/components/documents/DocumentsLayout"
 
-type Route = "chat" | "settings"
+type Route = "chat" | "settings" | "documents"
 
 function getRouteFromHash(): Route {
   const hash = window.location.hash.replace("#", "")
   if (hash === "/settings") return "settings"
+  if (hash === "/documents") return "documents"
   return "chat"
 }
 
@@ -24,8 +26,20 @@ function AppShell({ user, onLogout }: { user: { id: string; email: string; creat
   }, [])
 
   const navigate = useCallback((target: Route) => {
-    window.location.hash = target === "settings" ? "/settings" : "/"
+    const hashMap: Record<Route, string> = { chat: "/", settings: "/settings", documents: "/documents" }
+    window.location.hash = hashMap[target]
   }, [])
+
+  if (route === "documents") {
+    return (
+      <DocumentsLayout
+        onLogout={onLogout}
+        userEmail={user.email}
+        onNavigateToChat={() => navigate("chat")}
+        onOpenSettings={() => navigate("settings")}
+      />
+    )
+  }
 
   if (route === "settings") {
     return (
@@ -33,6 +47,7 @@ function AppShell({ user, onLogout }: { user: { id: string; email: string; creat
         user={user}
         onLogout={onLogout}
         onNavigateToChat={() => navigate("chat")}
+        onNavigateToDocuments={() => navigate("documents")}
       />
     )
   }
@@ -42,6 +57,7 @@ function AppShell({ user, onLogout }: { user: { id: string; email: string; creat
       user={user}
       onLogout={onLogout}
       onOpenSettings={() => navigate("settings")}
+      onOpenDocuments={() => navigate("documents")}
     />
   )
 }

@@ -12,9 +12,10 @@ interface ChatLayoutProps {
   user: User
   onLogout: () => void
   onOpenSettings: () => void
+  onOpenDocuments: () => void
 }
 
-export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) {
+export function ChatLayout({ user, onLogout, onOpenSettings, onOpenDocuments }: ChatLayoutProps) {
   const {
     threads,
     currentThread,
@@ -153,7 +154,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <AppSidebar user={user} onLogout={onLogout} onOpenSettings={onOpenSettings}>
+      <AppSidebar user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} onOpenDocuments={onOpenDocuments}>
         <ThreadList
           threads={threads}
           currentThreadId={currentThread?.id ?? null}
@@ -194,9 +195,24 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground">
-            Select or create a chat to get started
-          </div>
+          <>
+            <div className="flex-1 flex flex-col items-center justify-center px-4">
+              <div className="max-w-md text-center space-y-3">
+                <h2 className="text-xl font-semibold text-foreground">What can I help you with?</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Ask questions about your documents, search your knowledge base, or start a conversation.
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <MessageInput
+                onSend={handleSend}
+                onStop={stop}
+                disabled={streaming}
+                streaming={streaming}
+              />
+            </div>
+          </>
         )}
       </div>
     </div>
