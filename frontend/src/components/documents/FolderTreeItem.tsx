@@ -11,6 +11,7 @@ interface Props {
   onCreateFolder: (parentId: string) => void
   onRenameFolder: (id: string, currentName: string) => void
   onDeleteFolder: (id: string, name: string) => void
+  onMoveFolder: (id: string, name: string) => void
 }
 
 export function FolderTreeItem({
@@ -21,6 +22,7 @@ export function FolderTreeItem({
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
+  onMoveFolder,
 }: Props) {
   const [expanded, setExpanded] = useState(false)
   const hasChildren = node.children.length > 0
@@ -32,6 +34,7 @@ export function FolderTreeItem({
         onCreateSubfolder={() => onCreateFolder(node.id)}
         onRename={() => onRenameFolder(node.id, node.name)}
         onDelete={() => onDeleteFolder(node.id, node.name)}
+        onMoveFolder={() => onMoveFolder(node.id, node.name)}
       >
         <button
           onClick={() => onSelect(node.id)}
@@ -93,6 +96,7 @@ export function FolderTreeItem({
               onCreateFolder={onCreateFolder}
               onRenameFolder={onRenameFolder}
               onDeleteFolder={onDeleteFolder}
+              onMoveFolder={onMoveFolder}
             />
           ))}
         </div>

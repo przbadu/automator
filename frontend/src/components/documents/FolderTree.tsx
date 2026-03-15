@@ -10,6 +10,7 @@ interface Props {
   onCreateFolder: (parentId: string | null) => void
   onRenameFolder: (id: string, currentName: string) => void
   onDeleteFolder: (id: string, name: string) => void
+  onMoveFolder: (id: string, name: string) => void
 }
 
 export function FolderTree({
@@ -19,6 +20,7 @@ export function FolderTree({
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
+  onMoveFolder,
 }: Props) {
   return (
     <div className="flex flex-col h-full">
@@ -76,6 +78,7 @@ export function FolderTree({
               onCreateFolder={onCreateFolder}
               onRenameFolder={onRenameFolder}
               onDeleteFolder={onDeleteFolder}
+              onMoveFolder={onMoveFolder}
             />
           ))
         )}

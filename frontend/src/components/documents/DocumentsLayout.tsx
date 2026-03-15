@@ -6,6 +6,7 @@ import { DocumentList } from "./DocumentList"
 import { FolderTree } from "./FolderTree"
 import { CreateFolderDialog } from "./CreateFolderDialog"
 import { DeleteFolderDialog } from "./DeleteFolderDialog"
+import { MoveToFolderDialog } from "./MoveToFolderDialog"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 
@@ -19,6 +20,14 @@ type DialogState =
   | { type: "create"; parentId: string | null }
   | { type: "rename"; folderId: string; currentName: string }
   | { type: "delete"; folderId: string; folderName: string }
+
+type MoveDialogState = {
+  open: boolean
+  itemType: "document" | "folder"
+  itemId: string
+  itemName: string
+  currentFolderId: string | null
+} | null
 
 function findFolderName(
   tree: { id: string; name: string; children: { id: string; name: string; children: unknown[] }[] }[],
@@ -35,8 +44,25 @@ function findFolderName(
   return null
 }
 
+function findFolderParentId(
+  tree: { id: string; name: string; children: { id: string; name: string; children: unknown[] }[] }[],
+  id: string,
+  parentId: string | null = null,
+): string | null | undefined {
+  for (const node of tree) {
+    if (node.id === id) return parentId
+    const found = findFolderParentId(
+      node.children as typeof tree,
+      id,
+      node.id,
+    )
+    if (found !== undefined) return found
+  }
+  return undefined
+}
+
 export function DocumentsLayout({ onLogout, userEmail }: Props) {
-  const { documents, uploading, loadDocuments, uploadDocument, deleteDocument } =
+  const { documents, uploading, loadDocuments, uploadDocument, deleteDocument, moveDocument } =
     useDocuments()
   const {
     tree,
@@ -46,9 +72,11 @@ export function DocumentsLayout({ onLogout, userEmail }: Props) {
     createFolder,
     renameFolder,
     deleteFolder,
+    moveFolder,
   } = useFolders()
 
   const [dialogState, setDialogState] = useState<DialogState>({ type: "closed" })
+  const [moveDialogState, setMoveDialogState] = useState<MoveDialogState>(null)
 
   useEffect(() => {
     loadDocuments()
@@ -80,6 +108,45 @@ export function DocumentsLayout({ onLogout, userEmail }: Props) {
     setDialogState({ type: "delete", folderId: id, folderName: name })
   }
 
+  const handleMoveDocument = (docId: string, docName: string) => {
+    const doc = documents.find((d) => d.id === docId)
+    setMoveDialogState({
+      open: true,
+      itemType: "document",
+      itemId: docId,
+      itemName: docName,
+      currentFolderId: doc?.folder_id ?? null,
+    })
+  }
+
+  const handleMoveFolder = (folderId: string, folderName: string) => {
+    const parentId = findFolderParentId(tree, folderId)
+    setMoveDialogState({
+      open: true,
+      itemType: "folder",
+      itemId: folderId,
+      itemName: folderName,
+      currentFolderId: parentId ?? null,
+    })
+  }
+
+  const handleMoveConfirm = async (targetFolderId: string | null) => {
+    if (!moveDialogState) return
+    if (moveDialogState.itemType === "document") {
+      await moveDocument(moveDialogState.itemId, targetFolderId)
+      await loadTree()
+    } else {
+      await moveFolder(moveDialogState.itemId, targetFolderId)
+    }
+    await loadDocuments()
+  }
+
+  const handleUpload = async (file: File) => {
+    const result = await uploadDocument(file, selectedFolderId)
+    await loadTree()
+    return result
+  }
+
   const closeDialog = () => setDialogState({ type: "closed" })
 
   return (
@@ -94,6 +161,7 @@ export function DocumentsLayout({ onLogout, userEmail }: Props) {
             onCreateFolder={handleCreateFolder}
             onRenameFolder={handleRenameFolder}
             onDeleteFolder={handleDeleteFolder}
+            onMoveFolder={handleMoveFolder}
           />
         </div>
         <Separator />
@@ -119,10 +187,16 @@ export function DocumentsLayout({ onLogout, userEmail }: Props) {
 
         <div className="flex-1 overflow-y-auto">
           <DocumentUpload
-            onUpload={uploadDocument}
+            onUpload={handleUpload}
             uploading={uploading}
+            folderId={selectedFolderId}
+            folderName={selectedFolderName}
           />
-          <DocumentList documents={filteredDocuments} onDelete={deleteDocument} />
+          <DocumentList
+            documents={filteredDocuments}
+            onDelete={deleteDocument}
+            onMoveDocument={handleMoveDocument}
+          />
         </div>
       </div>
 
@@ -156,6 +230,19 @@ export function DocumentsLayout({ onLogout, userEmail }: Props) {
             await deleteFolder(dialogState.folderId)
           }}
           folderName={dialogState.folderName}
+        />
+      )}
+
+      {moveDialogState && (
+        <MoveToFolderDialog
+          open={moveDialogState.open}
+          onOpenChange={(open) => {
+            if (!open) setMoveDialogState(null)
+          }}
+          tree={tree}
+          currentFolderId={moveDialogState.currentFolderId}
+          onMove={handleMoveConfirm}
+          itemName={moveDialogState.itemName}
         />
       )}
     </div>
