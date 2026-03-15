@@ -16,11 +16,14 @@ export function useDocuments() {
   }, [])
 
   const uploadDocument = useCallback(
-    async (file: File): Promise<UploadResult> => {
+    async (file: File, folderId?: string | null): Promise<UploadResult> => {
       setUploading(true)
       try {
         const formData = new FormData()
         formData.append("file", file)
+        if (folderId) {
+          formData.append("folder_id", folderId)
+        }
         const res = await fetchWithAuth("/documents/upload", {
           method: "POST",
           body: formData,
@@ -142,5 +145,23 @@ export function useDocuments() {
     }
   }, [])
 
-  return { documents, uploading, loadDocuments, uploadDocument, deleteDocument }
+  const moveDocument = useCallback(
+    async (docId: string, folderId: string | null): Promise<void> => {
+      const res = await fetchWithAuth(`/documents/${docId}/move`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder_id: folderId }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Failed to move document" }))
+        throw new Error(err.detail || "Failed to move document")
+      }
+      setDocuments((prev) =>
+        prev.map((d) => (d.id === docId ? { ...d, folder_id: folderId } : d)),
+      )
+    },
+    [],
+  )
+
+  return { documents, uploading, loadDocuments, uploadDocument, deleteDocument, moveDocument }
 }
