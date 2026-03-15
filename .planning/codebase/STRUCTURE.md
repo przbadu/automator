@@ -52,7 +52,7 @@ Automator/
 │   ├── tailwind.config.js     # Tailwind CSS config
 │   └── package.json           # Node dependencies
 │
-├── tests/                     # Playwright e2e test suite
+├── tests/                     # Legacy Playwright tests (deprecated — use agent-browser for validation)
 │   └── e2e/
 │       ├── api/               # API-level tests (health, auth, chat, documents)
 │       ├── ui/                # Browser UI tests (forms, pages)
@@ -77,7 +77,7 @@ Automator/
 ├── PROGRESS.md                # Current module status tracker
 ├── PRD.md                     # Product requirements document
 ├── README.md                  # Quick start guide
-└── playwright.config.ts       # Playwright test config
+└── playwright.config.ts       # Legacy Playwright config (deprecated — use agent-browser)
 
 ```
 
@@ -165,7 +165,7 @@ Automator/
 - Pattern: Uses ApiClient fixture, validates HTTP status + response structure
 
 **`tests/e2e/ui/`:**
-- Purpose: Browser UI tests via Playwright
+- Purpose: Browser UI tests (legacy Playwright — use agent-browser for new validation)
 - Contains: login.spec.ts, chat.spec.ts, settings.spec.ts
 - Pattern: Uses page.goto, page.fill, page.click; validates DOM state
 
@@ -188,7 +188,7 @@ Automator/
 - `.env` — Actual env vars (gitignored, created by user from .env.example)
 - `backend/app/config.py` — Settings parsed from env vars using Pydantic
 - `frontend/vite.config.ts` — Vite bundler config (dev/prod settings, aliases)
-- `playwright.config.ts` — Test runner config (browsers, timeouts, API_URL)
+- `playwright.config.ts` — Legacy test config (deprecated — use agent-browser CLI for validation)
 
 **Core Logic:**
 - `backend/app/routers/chat.py` — Chat endpoint (POST /threads/{id}/messages with SSE streaming)

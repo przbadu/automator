@@ -401,8 +401,8 @@ async def fts_search(query: str, user_id: str, db) -> list[dict]:
 ### Test Framework
 | Property | Value |
 |----------|-------|
-| Framework | Playwright 1.x (existing) |
-| Config file | `playwright.config.ts` (existing) |
+| Tool | `agent-browser` CLI + `curl` |
+| API validation | `curl` against http://0.0.0.0:8000 |
 | Quick run command | `npm run test:api` |
 | Full suite command | `npm run test:fast` |
 
@@ -425,7 +425,7 @@ async def fts_search(query: str, user_id: str, db) -> list[dict]:
   - Test that document upload stores content in document_content table
   - Test that FTS5 search returns results for uploaded document keywords
   - Test that backfill endpoint populates content for previously ingested documents
-- [ ] No new framework install needed -- existing Playwright infrastructure covers all tests
+- [ ] No new framework install needed -- agent-browser CLI is already installed system-wide
 
 ## Sources
 

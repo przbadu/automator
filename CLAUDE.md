@@ -53,37 +53,46 @@ RAG app with chat (default) and document ingestion interfaces. Config via env va
 ## Development Flow
 1. **Plan** - Create a detailed plan and save it to `.agent/plans/`
 2. **Build** - Execute the plan to implement the feature
-3. **Test** - Run the regression suite and fix any failures: `npm test`
-4. **Validate** - Test and verify the implementation works correctly. Use browser testing where applicable via an appropriate MCP
+3. **Test** - Validate API endpoints with `curl` or similar HTTP tools
+4. **Validate** - Test and verify the implementation works correctly using `agent-browser` for UI validation
 5. **Iterate** - Fix any issues found during validation
 
-## Testing
-- **Regression suite**: `tests/e2e/` with 69 Playwright tests across 3 tiers
-- **Run commands**:
-  - `npm test` — run all tests (API + UI + LLM)
-  - `npm run test:fast` — API + UI tests only (no LLM needed, ~15s)
-  - `npm run test:api` — API tests only (~3s)
-  - `npm run test:ui` — UI tests only (~12s)
-  - `npm run test:llm` — LLM-dependent tests only (~2min)
-- **Structure**:
-  - `tests/e2e/fixtures/` — shared helpers (auth, api-client, SSE parser, cleanup)
-  - `tests/e2e/api/` — API-level tests (health, auth, threads, messages, documents, llm-configs)
-  - `tests/e2e/ui/` — browser UI tests (auth forms, chat layout, settings page)
-  - `tests/e2e/llm/` — tests requiring a live LLM (streaming, auto-title, RAG retrieval)
+## Testing & Validation (agent-browser)
+- **Tool**: `agent-browser` CLI — a browser automation tool for AI agents (replaces Playwright)
 - **Test credentials**: `test@example.com` / `password123`
-- **Servers must be running** (`bin/dev`) before running tests
-- **CRITICAL: When building new features or making changes, you MUST**:
-  1. Add new tests covering the feature (API tests for new endpoints, UI tests for new pages/components)
-  2. Run `npm run test:fast` to verify no regressions before considering the feature complete
-  3. If the feature involves LLM behavior, add tests in `tests/e2e/llm/` and run `npm test`
-  4. Never merge or commit code that causes existing tests to fail — fix the tests or the code
-  5. Use the shared fixtures in `tests/e2e/fixtures/` (ApiClient, uiLogin, cleanup helpers) — don't duplicate patterns
+- **Servers must be running** (`bin/dev`) before testing
+- **Backend API**: `http://0.0.0.0:8000` | **Frontend**: `http://0.0.0.0:5173`
 
-## Validation
-- Use Playwright in **headless mode** to validate features after each module
-- Backend API: `http://0.0.0.0:8000` | Frontend: `http://0.0.0.0:5173`
-- Validate both UI flows (via Playwright browser automation) and API endpoints
-- Each module's validation tasks are tracked in PROGRESS.md
+### How to validate with agent-browser
+1. **Navigate**: `agent-browser open http://0.0.0.0:5173`
+2. **Snapshot**: `agent-browser snapshot -i` (get interactive element refs like `@e1`, `@e2`)
+3. **Interact**: Use refs to click, fill, select (e.g., `agent-browser fill @e1 "test@example.com"`)
+4. **Re-snapshot**: After navigation or DOM changes, run `agent-browser snapshot -i` again for fresh refs
+5. **Verify**: Use `agent-browser get text @e1`, `agent-browser get url`, `agent-browser screenshot` to check results
+
+### Validation workflow
+```bash
+# Example: validate login flow
+agent-browser open http://0.0.0.0:5173
+agent-browser snapshot -i
+agent-browser fill @e1 "test@example.com"
+agent-browser fill @e2 "password123"
+agent-browser click @e3
+agent-browser wait --load networkidle
+agent-browser snapshot -i  # Verify chat view loaded
+agent-browser screenshot   # Capture for visual verification
+```
+
+### API testing
+- Use `curl` or `agent-browser` network features to test API endpoints directly
+- Example: `curl -s http://0.0.0.0:8000/health | jq .`
+
+### CRITICAL: When building new features or making changes, you MUST:
+1. Validate new API endpoints with curl/HTTP requests
+2. Validate new UI features with `agent-browser` (open page, interact, verify state)
+3. Take screenshots (`agent-browser screenshot`) to confirm visual correctness
+4. Test both happy path and error scenarios
+5. Never skip validation — always verify features work end-to-end before declaring complete
 
 ## Progress
 Check PROGRESS.md for current module status. Update it as you complete tasks.

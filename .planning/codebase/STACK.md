@@ -96,7 +96,7 @@
 - `frontend/tsconfig.app.json` - Application TypeScript config
 - `frontend/tsconfig.node.json` - Build tools TypeScript config
 - `frontend/eslint.config.js` - ESLint flat config (new format)
-- `playwright.config.ts` - E2E test configuration
+- `playwright.config.ts` - Legacy test config (deprecated — use agent-browser CLI)
 
 ## Platform Requirements
 
