@@ -3,7 +3,9 @@ import type { SourceCitation, SubAgentActivity, User } from "@/types"
 import { useChat } from "@/hooks/useChat"
 import { useSSE } from "@/hooks/useSSE"
 import type { SSEEvent } from "@/hooks/useSSE"
+import { useSidebar } from "@/hooks/useSidebar"
 import { AppSidebar } from "@/components/layout/AppSidebar"
+import { MobileHeader } from "@/components/layout/MobileHeader"
 import { ThreadList } from "./ThreadList"
 import { MessageList } from "./MessageList"
 import { MessageInput } from "./MessageInput"
@@ -33,10 +35,19 @@ export function ChatLayout({ user, onLogout, onOpenSettings, onOpenDocuments }: 
   const [isWaiting, setIsWaiting] = useState(false)
   const [streamingSources, setStreamingSources] = useState<SourceCitation[]>([])
   const [subAgentActivity, setSubAgentActivity] = useState<SubAgentActivity | null>(null)
+  const sidebar = useSidebar()
 
   useEffect(() => {
     loadThreads()
   }, [loadThreads])
+
+  const handleSelectThread = useCallback(
+    (threadId: string) => {
+      selectThread(threadId)
+      sidebar.close()
+    },
+    [selectThread, sidebar],
+  )
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -154,22 +165,36 @@ export function ChatLayout({ user, onLogout, onOpenSettings, onOpenDocuments }: 
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <AppSidebar user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} onOpenDocuments={onOpenDocuments}>
+      <AppSidebar
+        user={user}
+        onLogout={onLogout}
+        onOpenSettings={onOpenSettings}
+        onOpenDocuments={onOpenDocuments}
+        open={sidebar.open}
+        isMobile={sidebar.isMobile}
+        onClose={sidebar.close}
+      >
         <ThreadList
           threads={threads}
           currentThreadId={currentThread?.id ?? null}
-          onSelect={selectThread}
-          onCreate={() => createThread()}
+          onSelect={handleSelectThread}
+          onCreate={() => { createThread(); sidebar.close() }}
           onDelete={deleteThread}
         />
       </AppSidebar>
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {/* Mobile header with hamburger */}
+        <MobileHeader
+          onToggleSidebar={sidebar.toggle}
+          title={currentThread?.title ?? "New Chat"}
+        />
+
         {currentThread ? (
           <>
-            {/* Header - fixed */}
-            <div className="px-4 py-3 border-b shrink-0 bg-background">
+            {/* Desktop header */}
+            <div className="hidden md:block px-4 py-3 border-b shrink-0 bg-background">
               <h2 className="font-semibold text-sm truncate">
                 {currentThread.title}
               </h2>

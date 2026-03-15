@@ -35,7 +35,7 @@ export function MessageBubble({ role, content, metadata }: MessageBubbleProps) {
 
   return (
     <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("max-w-[80%]", isUser ? "" : "")}>
+      <div className={cn("max-w-[92%] md:max-w-[80%]", isUser ? "" : "")}>
         {persistedActivity && persistedActivity.toolCalls.length > 0 && (
           <SubAgentActivity activity={persistedActivity} defaultCollapsed />
         )}

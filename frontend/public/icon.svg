@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#18181b"/>
+  <g transform="translate(256, 256)">
+    <!-- Outer ring -->
+    <circle cx="0" cy="0" r="160" fill="none" stroke="#a1a1aa" stroke-width="16" stroke-dasharray="40 20" opacity="0.3"/>
+    <!-- Inner gear-like shape -->
+    <circle cx="0" cy="0" r="100" fill="#27272a"/>
+    <!-- Lightning bolt / automation symbol -->
+    <path d="M-20,-70 L10,-10 L-10,-10 L20,70 L-10,10 L10,10 Z" fill="#fafafa" opacity="0.95"/>
+    <!-- Dots representing nodes/connections -->
+    <circle cx="-80" cy="-80" r="12" fill="#71717a"/>
+    <circle cx="80" cy="-80" r="12" fill="#71717a"/>
+    <circle cx="-80" cy="80" r="12" fill="#71717a"/>
+    <circle cx="80" cy="80" r="12" fill="#71717a"/>
+    <!-- Connection lines -->
+    <line x1="-68" y1="-68" x2="-30" y2="-30" stroke="#71717a" stroke-width="3" opacity="0.5"/>
+    <line x1="68" y1="-68" x2="30" y2="-30" stroke="#71717a" stroke-width="3" opacity="0.5"/>
+    <line x1="-68" y1="68" x2="-30" y2="30" stroke="#71717a" stroke-width="3" opacity="0.5"/>
+    <line x1="68" y1="68" x2="30" y2="30" stroke="#71717a" stroke-width="3" opacity="0.5"/>
+  </g>
+</svg>

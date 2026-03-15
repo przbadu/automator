@@ -1,9 +1,11 @@
 import { useState } from "react"
 import type { User } from "@/types"
 import { AppSidebar } from "@/components/layout/AppSidebar"
+import { MobileHeader } from "@/components/layout/MobileHeader"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { LLMConfigPanel } from "./LLMConfigPanel"
 import { MetadataSchemaPanel } from "./MetadataSchemaPanel"
+import { useSidebar } from "@/hooks/useSidebar"
 import { cn } from "@/lib/utils"
 
 type SettingsTab = "llm" | "metadata"
@@ -22,15 +24,28 @@ interface Props {
 
 export function SettingsPage({ user, onLogout, onNavigateToChat, onNavigateToDocuments }: Props) {
   const [tab, setTab] = useState<SettingsTab>("llm")
+  const sidebar = useSidebar()
+
+  const handleTabSelect = (key: SettingsTab) => {
+    setTab(key)
+    sidebar.close()
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <AppSidebar user={user} onLogout={onLogout} onOpenSettings={() => {}}>
+      <AppSidebar
+        user={user}
+        onLogout={onLogout}
+        onOpenSettings={() => {}}
+        open={sidebar.open}
+        isMobile={sidebar.isMobile}
+        onClose={sidebar.close}
+      >
         {/* Settings sub-sidebar content */}
         <div className="flex flex-col h-full">
           <div className="p-3">
             <button
-              onClick={onNavigateToChat}
+              onClick={() => { sidebar.close(); onNavigateToChat() }}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg
@@ -55,7 +70,7 @@ export function SettingsPage({ user, onLogout, onNavigateToChat, onNavigateToDoc
               {SETTINGS_MENU.map((item) => (
                 <button
                   key={item.key}
-                  onClick={() => setTab(item.key)}
+                  onClick={() => handleTabSelect(item.key)}
                   className={cn(
                     "w-full text-left rounded-md px-3 py-2 text-sm transition-colors",
                     tab === item.key
@@ -67,7 +82,7 @@ export function SettingsPage({ user, onLogout, onNavigateToChat, onNavigateToDoc
                 </button>
               ))}
               <button
-                onClick={onNavigateToDocuments}
+                onClick={() => { sidebar.close(); onNavigateToDocuments() }}
                 className="w-full text-left rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               >
                 Documents & Folders
@@ -79,13 +94,20 @@ export function SettingsPage({ user, onLogout, onNavigateToChat, onNavigateToDoc
 
       {/* Main content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-        <div className="px-4 py-3 border-b shrink-0 bg-background">
+        {/* Mobile header */}
+        <MobileHeader
+          onToggleSidebar={sidebar.toggle}
+          title={SETTINGS_MENU.find((m) => m.key === tab)?.label}
+        />
+
+        {/* Desktop header */}
+        <div className="hidden md:block px-4 py-3 border-b shrink-0 bg-background">
           <h2 className="font-semibold text-sm">
             {SETTINGS_MENU.find((m) => m.key === tab)?.label}
           </h2>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl mx-auto p-4">
+          <div className="max-w-3xl mx-auto p-3 md:p-4">
             {tab === "llm" ? (
               <LLMConfigPanel />
             ) : (
