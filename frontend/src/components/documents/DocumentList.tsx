@@ -93,11 +93,7 @@ function MetadataDisplay({ metadata }: { metadata: Record<string, unknown> }) {
 
 export function DocumentList({ documents, onDelete, onMoveDocument }: Props) {
   if (documents.length === 0) {
-    return (
-      <div className="p-8 text-center text-sm text-muted-foreground">
-        No documents uploaded yet
-      </div>
-    )
+    return null
   }
 
   return (

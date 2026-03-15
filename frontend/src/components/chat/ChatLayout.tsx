@@ -12,9 +12,10 @@ interface ChatLayoutProps {
   user: User
   onLogout: () => void
   onOpenSettings: () => void
+  onOpenDocuments: () => void
 }
 
-export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) {
+export function ChatLayout({ user, onLogout, onOpenSettings, onOpenDocuments }: ChatLayoutProps) {
   const {
     threads,
     currentThread,
@@ -153,7 +154,7 @@ export function ChatLayout({ user, onLogout, onOpenSettings }: ChatLayoutProps) 
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <AppSidebar user={user} onLogout={onLogout} onOpenSettings={onOpenSettings}>
+      <AppSidebar user={user} onLogout={onLogout} onOpenSettings={onOpenSettings} onOpenDocuments={onOpenDocuments}>
         <ThreadList
           threads={threads}
           currentThreadId={currentThread?.id ?? null}

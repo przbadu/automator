@@ -2,17 +2,18 @@ import type { ReactNode } from "react"
 import type { User } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Moon, Sun } from "lucide-react"
+import { FolderOpen, Moon, Sun } from "lucide-react"
 import { useTheme } from "@/hooks/useTheme"
 
 interface AppSidebarProps {
   user: User
   onLogout: () => void
   onOpenSettings: () => void
+  onOpenDocuments?: () => void
   children: ReactNode
 }
 
-export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSidebarProps) {
+export function AppSidebar({ user, onLogout, onOpenSettings, onOpenDocuments, children }: AppSidebarProps) {
   const { resolvedTheme, setTheme } = useTheme()
 
   return (
@@ -38,6 +39,11 @@ export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSide
         >
           {resolvedTheme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
         </Button>
+        {onOpenDocuments && (
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onOpenDocuments} title="Documents">
+            <FolderOpen size={14} />
+          </Button>
+        )}
         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={onOpenSettings} title="Settings">
           <svg
             xmlns="http://www.w3.org/2000/svg"
