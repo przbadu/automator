@@ -13,14 +13,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **FOLDER-02**: User can rename existing folders
 - [x] **FOLDER-03**: User can delete folders (cascades to contents)
 - [x] **FOLDER-04**: User can move folders to a different parent folder
-- [ ] **FOLDER-05**: Folder metadata stored in SQLite (id, name, parent_id, user_id, path) with real filesystem directories under uploads/
+- [x] **FOLDER-05**: Folder metadata stored in SQLite (id, name, parent_id, user_id, path) with real filesystem directories under uploads/
 
 ### Document Management
 
 - [x] **DOC-01**: User can upload files into a specific folder
 - [x] **DOC-02**: User can move files between folders
-- [ ] **DOC-03**: System stores full extracted markdown in `document_content` SQLite table during ingestion
-- [ ] **DOC-04**: Existing documents backfilled with full markdown content
+- [x] **DOC-03**: System stores full extracted markdown in `document_content` SQLite table during ingestion
+- [x] **DOC-04**: Existing documents backfilled with full markdown content
 
 ### KB Exploration Tools
 
@@ -30,7 +30,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **TOOL-04**: Agent can use `glob(pattern)` to match filenames by pattern (e.g., `*.pdf`, `reports/**/*`)
 - [ ] **TOOL-05**: Agent can use `read(path)` to read full document markdown content
 - [ ] **TOOL-06**: Agent can use `read(path, offset, limit)` to read specific line range with line numbers
-- [ ] **TOOL-07**: SQLite FTS5 virtual table indexed on extracted markdown for fast keyword search in grep
+- [x] **TOOL-07**: SQLite FTS5 virtual table indexed on extracted markdown for fast keyword search in grep
 - [ ] **TOOL-08**: All tools enforce user_id scoping — users only see their own content
 - [ ] **TOOL-09**: LLM automatically selects exploration tools based on user's question
 
@@ -102,18 +102,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FOLDER-02 | Phase 2 | Complete |
 | FOLDER-03 | Phase 2 | Complete |
 | FOLDER-04 | Phase 2 | Complete |
-| FOLDER-05 | Phase 1 | Pending |
+| FOLDER-05 | Phase 1 | Complete |
 | DOC-01 | Phase 2 | Complete |
 | DOC-02 | Phase 2 | Complete |
-| DOC-03 | Phase 1 | Pending |
-| DOC-04 | Phase 1 | Pending |
+| DOC-03 | Phase 1 | Complete |
+| DOC-04 | Phase 1 | Complete |
 | TOOL-01 | Phase 3 | Pending |
 | TOOL-02 | Phase 3 | Pending |
 | TOOL-03 | Phase 3 | Pending |
 | TOOL-04 | Phase 3 | Pending |
 | TOOL-05 | Phase 3 | Pending |
 | TOOL-06 | Phase 3 | Pending |
-| TOOL-07 | Phase 1 | Pending |
+| TOOL-07 | Phase 1 | Complete |
 | TOOL-08 | Phase 3 | Pending |
 | TOOL-09 | Phase 4 | Pending |
 | AGENT-01 | Phase 4 | Pending |

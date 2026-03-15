@@ -121,7 +121,7 @@ if not row:
 
 **Async/Await:**
 - Python: `async def` functions with `await` for database, file I/O, API calls
-- TypeScript: `async function` with `await` for fetch, Playwright operations
+- TypeScript: `async function` with `await` for fetch operations
 - Both: Always await promises before using results
 
 ## Logging
@@ -152,7 +152,7 @@ if not row:
 Example from `api-client.ts`:
 ```typescript
 /**
- * Typed API client wrapping Playwright's request context with auth headers.
+ * Typed API client wrapping HTTP request context with auth headers.
  */
 export class ApiClient {
   /**

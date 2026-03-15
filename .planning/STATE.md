@@ -5,13 +5,13 @@ milestone_name: milestone
 status: executing
 stopped_at: Completed 02-02-PLAN.md
 last_updated: "2026-03-15T10:24:22.814Z"
-last_activity: 2026-03-15 -- Completed 02-01 folder CRUD API
+last_activity: 2026-03-15 -- Completed Phase 2 (Folder Operations API)
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-03-15)
 
 ## Current Position
 
-Phase: 2 of 5 (Folder Operations API)
-Plan: 1 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-15 -- Completed 02-01 folder CRUD API
+Phase: 3 of 5 (KB Exploration Tools)
+Plan: 0 of 0 in current phase
+Status: Ready to plan
+Last activity: 2026-03-15 -- Completed Phase 2 (Folder Operations API)
 
-Progress: [█████░░░░░] 50%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
@@ -43,14 +43,14 @@ Progress: [█████░░░░░] 50%
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 02-folder-operations-api | 1 | 7min | 7min |
+| 01-data-foundation | 2 | 16min | 8min |
+| 02-folder-operations-api | 2 | 9min | 4.5min |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (7min)
-- Trend: baseline
+- Last 5 plans: 01-01 (12min), 01-02 (4min), 02-01 (7min), 02-02 (2min)
+- Trend: accelerating
 
 *Updated after each plan completion*
-| Phase 02 P02 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -62,6 +62,11 @@ Recent decisions affecting current work:
 - [Roadmap]: Keep folders as logical SQLite-only concept -- flat filesystem layout preserved (uploads/{user_id}/{document_id}/{filename})
 - [Roadmap]: Do NOT store folder paths in ChromaDB -- resolve via SQLite join to avoid consistency drift
 - [Roadmap]: Create FTS5 virtual table in Phase 1 migration upfront, wire into grep only if regex performance is insufficient
+- [01-01]: Used ON CONFLICT DO UPDATE (not INSERT OR REPLACE) for document_content upsert to preserve FTS5 rowid mapping
+- [01-01]: Used ON DELETE SET NULL for folder_id FK so deleting a folder makes documents unfiled rather than deleted
+- [01-01]: Added content/search endpoints in Plan 01 since Phase 3 tools will need them
+- [Phase 01-02]: Used ChromaDB chunk reconstruction as fallback when source files missing on disk
+- [Phase 01-02]: Process backfill documents sequentially to avoid Docling memory issues
 - [02-01]: Used `from langfuse import observe` (not `langfuse.decorators`) matching existing project convention
 - [02-01]: Made BACKEND_URL/FRONTEND_URL configurable via env vars in test-data.ts for worktree testing
 - [Phase 02]: Backend upload/move endpoints pre-existing from 02-01 -- Task 1 was pre-complete, only tests needed
@@ -77,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T10:21:38.465Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-15T10:24:22.814Z
+Stopped at: Completed Phase 2, merging with main
 Resume file: None

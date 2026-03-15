@@ -35,3 +35,4 @@ backend/chroma_data/
 backend/uploads/
 
 *.sqlite
+.worktrees

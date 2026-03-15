@@ -17,20 +17,19 @@ created: 2026-03-15
 
 | Property | Value |
 |----------|-------|
-| **Framework** | Playwright 1.x (existing) |
-| **Config file** | `playwright.config.ts` |
-| **Quick run command** | `npm run test:api` |
-| **Full suite command** | `npm run test:fast` |
-| **Estimated runtime** | ~15 seconds |
+| **Tool** | `agent-browser` CLI + `curl` |
+| **API validation** | `curl` against http://0.0.0.0:8000 |
+| **UI validation** | `agent-browser open http://0.0.0.0:5173` |
+| **Estimated runtime** | ~30 seconds per validation |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `npm run test:fast`
-- **After every plan wave:** Run `npm run test:fast`
-- **Before `/gsd:verify-work`:** Full suite must be green
-- **Max feedback latency:** 15 seconds
+- **After every task commit:** Validate API endpoints with curl, UI with agent-browser
+- **After every plan wave:** Full validation pass (API + UI)
+- **Before `/gsd:verify-work`:** All validations must pass
+- **Max feedback latency:** 30 seconds
 
 ---
 
@@ -38,10 +37,10 @@ created: 2026-03-15
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 1 | FOLDER-05 | API | `npm run test:api` | ❌ W0 | ⬜ pending |
-| 01-01-02 | 01 | 1 | DOC-03 | API | `npm run test:api` | ❌ W0 | ⬜ pending |
-| 01-01-03 | 01 | 1 | DOC-04 | API | `npm run test:api` | ❌ W0 | ⬜ pending |
-| 01-01-04 | 01 | 1 | TOOL-07 | API | `npm run test:api` | ❌ W0 | ⬜ pending |
+| 01-01-01 | 01 | 1 | FOLDER-05 | API | `curl` API validation | ❌ W0 | ⬜ pending |
+| 01-01-02 | 01 | 1 | DOC-03 | API | `curl` API validation | ❌ W0 | ⬜ pending |
+| 01-01-03 | 01 | 1 | DOC-04 | API | `curl` API validation | ❌ W0 | ⬜ pending |
+| 01-01-04 | 01 | 1 | TOOL-07 | API | `curl` API validation | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -49,12 +48,11 @@ created: 2026-03-15
 
 ## Wave 0 Requirements
 
-- [ ] `tests/e2e/api/data-foundation.spec.ts` — covers FOLDER-05, DOC-03, DOC-04, TOOL-07
-  - Test that folders table accepts inserts with all required columns
-  - Test that document upload stores content in document_content table
-  - Test that FTS5 search returns results for uploaded document keywords
-  - Test that backfill endpoint populates content for previously ingested documents
-- [ ] No new framework install needed — existing Playwright infrastructure covers all tests
+- [ ] Validate FOLDER-05: `curl` POST to create folder, GET to verify columns
+- [ ] Validate DOC-03: Upload document via `curl`, query document_content table
+- [ ] Validate DOC-04: Trigger backfill via `curl`, verify content populated
+- [ ] Validate TOOL-07: `curl` FTS5 search endpoint, verify keyword results
+- [ ] UI validation via `agent-browser` for any frontend-facing features
 
 *If none: "Existing infrastructure covers all phase requirements."*
 

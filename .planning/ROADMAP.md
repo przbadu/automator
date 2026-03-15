@@ -12,7 +12,7 @@ Transform a flat-document RAG application into a Claude Code-inspired knowledge 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Foundation** - Schema, content storage, ingestion pipeline modification, and FTS5 indexing
+- [x] **Phase 1: Data Foundation** - Schema, content storage, ingestion pipeline modification, and FTS5 indexing (completed 2026-03-15)
 - [ ] **Phase 2: Folder Operations API** - REST API for folder CRUD and document management within folders
 - [ ] **Phase 3: KB Exploration Tools** - Five exploration tools (ls, tree, grep, glob, read) with user scoping
 - [ ] **Phase 4: Agent Integration** - Tool registration, intent routing, and explorer sub-agent
@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Schema migration (folders, document_content, FTS5), ingestion pipeline content storage, content/FTS5 endpoints and tests
+- [x] 01-01-PLAN.md — Schema migration (folders, document_content, FTS5), ingestion pipeline content storage, content/FTS5 endpoints and tests
 - [ ] 01-02-PLAN.md — Backfill service for existing documents, admin endpoint, backfill tests
 
 ### Phase 2: Folder Operations API
@@ -105,8 +105,8 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/2 | Planning complete | - |
-| 2. Folder Operations API | 0/2 | Planning complete | - |
+| 1. Data Foundation | 2/2 | Complete | 2026-03-15 |
+| 2. Folder Operations API | 2/2 | Complete | 2026-03-15 |
 | 3. KB Exploration Tools | 0/0 | Not started | - |
 | 4. Agent Integration | 0/0 | Not started | - |
 | 5. Folder Management UI | 0/0 | Not started | - |

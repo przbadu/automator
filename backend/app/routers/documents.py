@@ -11,7 +11,13 @@ from sse_starlette.sse import EventSourceResponse
 from app.config import settings
 from app.database import get_chroma_collection, get_db
 from app.middleware.auth import get_current_user
-from app.models.documents import DocumentListResponse, DocumentResponse
+from app.models.documents import (
+    DocumentContentResponse,
+    DocumentListResponse,
+    DocumentResponse,
+    FTSSearchResponse,
+    FTSSearchResult,
+)
 from app.models.folders import MoveDocumentRequest
 from app.services.record_manager import check_duplicate, compute_content_hash
 from app.services.status_events import publish
@@ -244,6 +250,89 @@ async def document_status_stream(
             yield {"data": json.dumps(event)}
 
     return EventSourceResponse(event_generator())
+
+
+@router.get("/search/fts", response_model=FTSSearchResponse)
+async def fts_search(
+    q: str,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Full-text search over document content using FTS5."""
+    user_id = current_user["id"]
+
+    if not q.strip():
+        return FTSSearchResponse(results=[], query=q, total=0)
+
+    cursor = await db.execute(
+        """SELECT dc.document_id, d.filename,
+                  highlight(document_content_fts, 0, '<mark>', '</mark>') as snippet,
+                  rank
+           FROM document_content_fts
+           JOIN document_content dc ON dc.rowid = document_content_fts.rowid
+           JOIN documents d ON d.id = dc.document_id
+           WHERE document_content_fts MATCH ?
+             AND dc.user_id = ?
+           ORDER BY rank
+           LIMIT ?""",
+        (q, user_id, limit),
+    )
+    rows = await cursor.fetchall()
+    results = [
+        FTSSearchResult(
+            document_id=r[0],
+            filename=r[1],
+            snippet=r[2][:500] if r[2] else "",
+            rank=float(r[3]),
+        )
+        for r in rows
+    ]
+    return FTSSearchResponse(results=results, query=q, total=len(results))
+
+
+@router.post("/admin/backfill-content")
+async def backfill_content(
+    current_user: dict = Depends(get_current_user),
+):
+    """Backfill document_content for existing documents missing full markdown."""
+    from app.services.backfill_service import backfill_document_content
+
+    stats = await backfill_document_content()
+    return stats
+
+
+@router.get("/{document_id}/content", response_model=DocumentContentResponse)
+async def get_document_content(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Return the full extracted markdown content for a document."""
+    user_id = current_user["id"]
+
+    # Verify document belongs to user
+    cursor = await db.execute(
+        "SELECT id FROM documents WHERE id = ? AND user_id = ?",
+        (document_id, user_id),
+    )
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    cursor = await db.execute(
+        "SELECT document_id, content, line_count, char_count FROM document_content WHERE document_id = ? AND user_id = ?",
+        (document_id, user_id),
+    )
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document content not found")
+
+    return DocumentContentResponse(
+        document_id=row[0],
+        content=row[1],
+        line_count=row[2],
+        char_count=row[3],
+    )
 
 
 @router.get("/{document_id}/chunks")

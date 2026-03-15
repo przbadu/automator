@@ -31,11 +31,11 @@ No new pip dependencies required. Everything uses Python stdlib + existing proje
 
 ### Development Tools
 
-No new dev tooling needed. Existing Playwright test infrastructure covers new API endpoints.
+No new dev tooling needed. Use agent-browser CLI for UI validation and curl for API testing.
 
 | Tool | Purpose | Notes |
 |------|---------|-------|
-| Playwright (existing) | E2E testing of new folder CRUD + exploration API endpoints | Add tests in `tests/e2e/api/` for folder operations and tool endpoints |
+| agent-browser CLI | UI validation of folder CRUD + exploration features | Use `agent-browser` for UI validation, `curl` for API endpoints |
 | aiosqlite migrations | Schema additions for folders table and document_content table | Follow existing pattern in `backend/migrations/` with sequential numbering |
 
 ## Schema Design (New Tables)

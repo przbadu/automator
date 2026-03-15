@@ -21,3 +21,23 @@ class DocumentResponse(BaseModel):
 
 class DocumentListResponse(BaseModel):
     documents: list[DocumentResponse]
+
+
+class DocumentContentResponse(BaseModel):
+    document_id: str
+    content: str
+    line_count: int
+    char_count: int
+
+
+class FTSSearchResult(BaseModel):
+    document_id: str
+    filename: str
+    snippet: str
+    rank: float
+
+
+class FTSSearchResponse(BaseModel):
+    results: list[FTSSearchResult]
+    query: str
+    total: int

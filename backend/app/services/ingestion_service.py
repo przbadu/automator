@@ -71,6 +71,21 @@ async def ingest_document(doc_id: str, user_id: str, filename: str) -> None:
             await _update_status(db, doc_id, user_id, "failed", error_message="File is empty")
             return
 
+        # 1.5 Store full extracted markdown for grep/read tools
+        line_count = text.count("\n") + 1
+        char_count = len(text)
+        await db.execute(
+            """INSERT INTO document_content (document_id, user_id, content, line_count, char_count)
+               VALUES (?, ?, ?, ?, ?)
+               ON CONFLICT(document_id) DO UPDATE SET
+                   content = excluded.content,
+                   line_count = excluded.line_count,
+                   char_count = excluded.char_count""",
+            (doc_id, user_id, text, line_count, char_count),
+        )
+        await db.commit()
+        logger.info("Stored full content for document %s: %d lines, %d chars", doc_id, line_count, char_count)
+
         # 2. Chunking
         await _update_status(db, doc_id, user_id, "chunking", progress="Chunking document...")
         try:
