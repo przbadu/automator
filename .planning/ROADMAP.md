@@ -76,11 +76,11 @@ Plans:
   2. Explorer sub-agent can chain multiple tools autonomously (e.g., tree then grep then read) to answer a question
   3. Explorer sub-agent returns synthesized findings in natural language, not raw tool output
   4. Explorer sub-agent can delegate to the existing document analysis sub-agent for deep single-document analysis
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — KB tool definitions (OpenAI + Anthropic formats), executor wrappers, intent classification extension with KB explorer fast-path
+- [ ] 04-02-PLAN.md — Explorer sub-agent mode in sub_agent_service, analyze_document delegation, chat router explorer routing
 
 ### Phase 5: Folder Management UI
 **Goal**: Users can visually organize their knowledge base through a folder tree interface with drag-drop support
@@ -108,5 +108,5 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 | 1. Data Foundation | 2/2 | Complete | 2026-03-15 |
 | 2. Folder Operations API | 2/2 | Complete | 2026-03-15 |
 | 3. KB Exploration Tools | 2/2 | Complete | 2026-03-15 |
-| 4. Agent Integration | 0/0 | Not started | - |
+| 4. Agent Integration | 0/2 | In progress | - |
 | 5. Folder Management UI | 0/0 | Not started | - |
