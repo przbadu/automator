@@ -111,16 +111,20 @@ export class ApiClient {
 
   // --- Documents ---
 
-  async uploadDocument(name: string, content: string, mimeType = "text/plain") {
+  async uploadDocument(name: string, content: string, mimeType = "text/plain", folderId?: string) {
+    const multipart: Record<string, unknown> = {
+      file: {
+        name,
+        mimeType,
+        buffer: Buffer.from(content),
+      },
+    };
+    if (folderId) {
+      multipart.folder_id = folderId;
+    }
     return this.request.post(`${BACKEND_URL}/documents/upload`, {
       headers: this.headers(),
-      multipart: {
-        file: {
-          name,
-          mimeType,
-          buffer: Buffer.from(content),
-        },
-      },
+      multipart,
     });
   }
 
@@ -177,6 +181,69 @@ export class ApiClient {
 
   async deleteDocument(id: string) {
     return this.request.delete(`${BACKEND_URL}/documents/${id}`, {
+      headers: this.headers(),
+    });
+  }
+
+  async moveDocument(documentId: string, folderId: string | null) {
+    return this.request.patch(`${BACKEND_URL}/documents/${documentId}/move`, {
+      headers: { ...this.headers(), "Content-Type": "application/json" },
+      data: { folder_id: folderId },
+    });
+  }
+
+  // --- Folders ---
+
+  async createFolder(name: string, parentId?: string) {
+    return this.request.post(`${BACKEND_URL}/folders`, {
+      headers: { ...this.headers(), "Content-Type": "application/json" },
+      data: { name, parent_id: parentId ?? null },
+    });
+  }
+
+  async listFolders() {
+    return this.request.get(`${BACKEND_URL}/folders`, {
+      headers: this.headers(),
+    });
+  }
+
+  async getFolderTree(rootId?: string) {
+    const url = rootId
+      ? `${BACKEND_URL}/folders/tree?root_id=${rootId}`
+      : `${BACKEND_URL}/folders/tree`;
+    return this.request.get(url, {
+      headers: this.headers(),
+    });
+  }
+
+  async getFolder(id: string) {
+    return this.request.get(`${BACKEND_URL}/folders/${id}`, {
+      headers: this.headers(),
+    });
+  }
+
+  async renameFolder(id: string, name: string) {
+    return this.request.patch(`${BACKEND_URL}/folders/${id}`, {
+      headers: { ...this.headers(), "Content-Type": "application/json" },
+      data: { name },
+    });
+  }
+
+  async moveFolder(id: string, parentId: string | null) {
+    return this.request.patch(`${BACKEND_URL}/folders/${id}/move`, {
+      headers: { ...this.headers(), "Content-Type": "application/json" },
+      data: { parent_id: parentId },
+    });
+  }
+
+  async deleteFolder(id: string) {
+    return this.request.delete(`${BACKEND_URL}/folders/${id}`, {
+      headers: this.headers(),
+    });
+  }
+
+  async getFolderDocuments(id: string) {
+    return this.request.get(`${BACKEND_URL}/folders/${id}/documents`, {
       headers: this.headers(),
     });
   }

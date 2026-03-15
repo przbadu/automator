@@ -45,11 +45,11 @@ Plans:
   3. User can delete a folder and all contained documents and subfolders are cascade-deleted
   4. User can move a folder to a different parent and all descendants maintain correct paths
   5. User can upload a file targeting a specific folder and the document is associated with that folder after ingestion
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Folder CRUD API (models, service, router, tests for create/rename/delete/move)
+- [ ] 02-02-PLAN.md — Document-folder operations (upload-to-folder, document move endpoint, tests)
 
 ### Phase 3: KB Exploration Tools
 **Goal**: The agent has five working exploration tools that can navigate, search, and read the knowledge base with user-scoped isolation
@@ -105,8 +105,8 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 2/2 | Complete   | 2026-03-15 |
-| 2. Folder Operations API | 0/0 | Not started | - |
+| 1. Data Foundation | 2/2 | Complete | 2026-03-15 |
+| 2. Folder Operations API | 2/2 | Complete | 2026-03-15 |
 | 3. KB Exploration Tools | 0/0 | Not started | - |
 | 4. Agent Integration | 0/0 | Not started | - |
 | 5. Folder Management UI | 0/0 | Not started | - |

@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 
-export const BACKEND_URL = "http://0.0.0.0:8000";
-export const FRONTEND_URL = "http://0.0.0.0:5173";
+export const BACKEND_URL = process.env.BACKEND_URL || "http://0.0.0.0:8000";
+export const FRONTEND_URL = process.env.FRONTEND_URL || "http://0.0.0.0:5173";
 export const TEST_EMAIL = "test@example.com";
 export const TEST_PASSWORD = "password123";
 

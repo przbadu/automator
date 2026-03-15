@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 import aiosqlite
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from sse_starlette.sse import EventSourceResponse
 
@@ -18,6 +18,7 @@ from app.models.documents import (
     FTSSearchResponse,
     FTSSearchResult,
 )
+from app.models.folders import MoveDocumentRequest
 from app.services.record_manager import check_duplicate, compute_content_hash
 from app.services.status_events import publish
 from app.services.storage_service import delete_file, save_file
@@ -80,6 +81,7 @@ def _parse_metadata(raw: str | None) -> dict | None:
 async def upload_document(
     file: UploadFile,
     background_tasks: BackgroundTasks,
+    folder_id: str | None = Form(default=None),
     current_user: dict = Depends(get_current_user),
     db: aiosqlite.Connection = Depends(get_db),
 ):
@@ -98,6 +100,16 @@ async def upload_document(
         )
 
     user_id = current_user["id"]
+
+    # Validate folder exists and belongs to user
+    if folder_id:
+        cursor = await db.execute(
+            "SELECT id FROM folders WHERE id = ? AND user_id = ?",
+            (folder_id, user_id),
+        )
+        if not await cursor.fetchone():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+
     now = datetime.now(timezone.utc).isoformat()
     mime_type = _mime_for_ext(ext)
     content_hash = compute_content_hash(content)
@@ -179,9 +191,9 @@ async def upload_document(
     doc_id = str(uuid.uuid4())
     await save_file(user_id, doc_id, file.filename, content)
     await db.execute(
-        """INSERT INTO documents (id, user_id, filename, file_size, mime_type, status, content_hash, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)""",
-        (doc_id, user_id, file.filename, file_size, mime_type, content_hash, now, now),
+        """INSERT INTO documents (id, user_id, filename, file_size, mime_type, status, content_hash, created_at, updated_at, folder_id)
+           VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)""",
+        (doc_id, user_id, file.filename, file_size, mime_type, content_hash, now, now, folder_id),
     )
     await db.commit()
 
@@ -193,7 +205,7 @@ async def upload_document(
         content=DocumentResponse(
             id=doc_id, user_id=user_id, filename=file.filename, file_size=file_size,
             mime_type=mime_type, status="pending", chunk_count=0, error_message=None,
-            content_hash=content_hash, created_at=now, updated_at=now,
+            content_hash=content_hash, created_at=now, updated_at=now, folder_id=folder_id,
         ).model_dump(),
     )
 
@@ -375,6 +387,57 @@ async def get_document(
     row = await cursor.fetchone()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    return DocumentResponse(
+        id=row[0], user_id=row[1], filename=row[2], file_size=row[3], mime_type=row[4],
+        status=row[5], chunk_count=row[6], error_message=row[7], created_at=row[8],
+        updated_at=row[9], content_hash=row[10], metadata=_parse_metadata(row[11]),
+        folder_id=row[12],
+    )
+
+
+@router.patch("/{document_id}/move")
+async def move_document(
+    document_id: str,
+    req: MoveDocumentRequest,
+    current_user: dict = Depends(get_current_user),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Move a document to a different folder (or to unfiled if folder_id is null)."""
+    user_id = current_user["id"]
+
+    # Verify document exists and belongs to user
+    cursor = await db.execute(
+        "SELECT id FROM documents WHERE id = ? AND user_id = ?",
+        (document_id, user_id),
+    )
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+
+    # Validate target folder if provided
+    if req.folder_id:
+        cursor = await db.execute(
+            "SELECT id FROM folders WHERE id = ? AND user_id = ?",
+            (req.folder_id, user_id),
+        )
+        if not await cursor.fetchone():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Folder not found")
+
+    # Update document's folder_id
+    now = datetime.now(timezone.utc).isoformat()
+    await db.execute(
+        "UPDATE documents SET folder_id = ?, updated_at = ? WHERE id = ? AND user_id = ?",
+        (req.folder_id, now, document_id, user_id),
+    )
+    await db.commit()
+
+    # Return updated document
+    cursor = await db.execute(
+        """SELECT id, user_id, filename, file_size, mime_type, status, chunk_count,
+                  error_message, created_at, updated_at, content_hash, metadata, folder_id
+           FROM documents WHERE id = ?""",
+        (document_id,),
+    )
+    row = await cursor.fetchone()
     return DocumentResponse(
         id=row[0], user_id=row[1], filename=row[2], file_size=row[3], mime_type=row[4],
         status=row[5], chunk_count=row[6], error_message=row[7], created_at=row[8],

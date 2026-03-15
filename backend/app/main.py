@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, chat, debug, documents, llm_configs, metadata_schemas
+from app.routers import auth, chat, debug, documents, folders, llm_configs, metadata_schemas
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(debug.router)
 app.include_router(documents.router)
+app.include_router(folders.router)
 app.include_router(llm_configs.router)
 app.include_router(metadata_schemas.router)
 
