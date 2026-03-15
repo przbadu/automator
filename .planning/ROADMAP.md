@@ -29,11 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Full extracted markdown is stored in a document_content table during ingestion alongside existing chunking
   3. Existing documents are backfilled with their full extracted markdown content
   4. FTS5 virtual table is indexed on extracted markdown and returns results for keyword queries
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Schema migration (folders, document_content, FTS5), ingestion pipeline content storage, content/FTS5 endpoints and tests
+- [ ] 01-02-PLAN.md — Backfill service for existing documents, admin endpoint, backfill tests
 
 ### Phase 2: Folder Operations API
 **Goal**: Users can organize their knowledge base into folders and manage documents within them via API endpoints
@@ -105,7 +105,7 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/0 | Not started | - |
+| 1. Data Foundation | 0/2 | Planning complete | - |
 | 2. Folder Operations API | 0/0 | Not started | - |
 | 3. KB Exploration Tools | 0/0 | Not started | - |
 | 4. Agent Integration | 0/0 | Not started | - |
