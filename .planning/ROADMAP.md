@@ -13,8 +13,8 @@ Transform a flat-document RAG application into a Claude Code-inspired knowledge 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Schema, content storage, ingestion pipeline modification, and FTS5 indexing (completed 2026-03-15)
-- [ ] **Phase 2: Folder Operations API** - REST API for folder CRUD and document management within folders
-- [ ] **Phase 3: KB Exploration Tools** - Five exploration tools (ls, tree, grep, glob, read) with user scoping
+- [x] **Phase 2: Folder Operations API** - REST API for folder CRUD and document management within folders (completed 2026-03-15)
+- [x] **Phase 3: KB Exploration Tools** - Five exploration tools (ls, tree, grep, glob, read) with user scoping (completed 2026-03-15)
 - [ ] **Phase 4: Agent Integration** - Tool registration, intent routing, and explorer sub-agent
 - [ ] **Phase 5: Folder Management UI** - Folder tree panel, CRUD dialogs, upload-to-folder, and drag-drop operations
 
@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Schema migration (folders, document_content, FTS5), ingestion pipeline content storage, content/FTS5 endpoints and tests
-- [ ] 01-02-PLAN.md — Backfill service for existing documents, admin endpoint, backfill tests
+- [x] 01-02-PLAN.md — Backfill service for existing documents, admin endpoint, backfill tests
 
 ### Phase 2: Folder Operations API
 **Goal**: Users can organize their knowledge base into folders and manage documents within them via API endpoints
@@ -48,8 +48,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Folder CRUD API (models, service, router, tests for create/rename/delete/move)
-- [ ] 02-02-PLAN.md — Document-folder operations (upload-to-folder, document move endpoint, tests)
+- [x] 02-01-PLAN.md — Folder CRUD API (models, service, router, tests for create/rename/delete/move)
+- [x] 02-02-PLAN.md — Document-folder operations (upload-to-folder, document move endpoint, tests)
 
 ### Phase 3: KB Exploration Tools
 **Goal**: The agent has five working exploration tools that can navigate, search, and read the knowledge base with user-scoped isolation
@@ -61,11 +61,11 @@ Plans:
   3. Agent can regex-search extracted markdown and get matching document names with line previews, respecting output size limits
   4. Agent can match documents by filename pattern (e.g., *.pdf, reports/**/*) and get matching paths
   5. Agent can read full document markdown or a specific line range with line numbers
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [x] 03-01-PLAN.md — KB tools service layer (models, 5 tool functions, unit tests)
+- [x] 03-02-PLAN.md — KB tools REST API (FastAPI router, JWT auth, integration tests)
 
 ### Phase 4: Agent Integration
 **Goal**: The LLM automatically selects KB tools based on user questions and can spawn an explorer sub-agent for multi-step knowledge base navigation
@@ -107,6 +107,6 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete | 2026-03-15 |
 | 2. Folder Operations API | 2/2 | Complete | 2026-03-15 |
-| 3. KB Exploration Tools | 0/0 | Not started | - |
+| 3. KB Exploration Tools | 2/2 | Complete | 2026-03-15 |
 | 4. Agent Integration | 0/0 | Not started | - |
 | 5. Folder Management UI | 0/0 | Not started | - |
