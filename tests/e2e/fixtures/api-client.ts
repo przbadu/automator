@@ -169,6 +169,12 @@ export class ApiClient {
     });
   }
 
+  async backfillContent() {
+    return this.request.post(`${BACKEND_URL}/documents/admin/backfill-content`, {
+      headers: this.headers(),
+    });
+  }
+
   async deleteDocument(id: string) {
     return this.request.delete(`${BACKEND_URL}/documents/${id}`, {
       headers: this.headers(),

@@ -279,6 +279,17 @@ async def fts_search(
     return FTSSearchResponse(results=results, query=q, total=len(results))
 
 
+@router.post("/admin/backfill-content")
+async def backfill_content(
+    current_user: dict = Depends(get_current_user),
+):
+    """Backfill document_content for existing documents missing full markdown."""
+    from app.services.backfill_service import backfill_document_content
+
+    stats = await backfill_document_content()
+    return stats
+
+
 @router.get("/{document_id}/content", response_model=DocumentContentResponse)
 async def get_document_content(
     document_id: str,

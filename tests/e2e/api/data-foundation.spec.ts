@@ -102,6 +102,7 @@ test.describe("Data Foundation - Schema and Content Storage", () => {
   });
 
   test("document re-ingestion updates content via upsert", async () => {
+    // Note: this test is from Plan 01 and is kept for regression coverage
     const content1 = "Original content for upsert test document version one";
     const doc1 = await uploadAndWaitForIngestion(client, "upsert-test.txt", content1);
     expect(doc1.status).toBe("completed");
@@ -122,5 +123,45 @@ test.describe("Data Foundation - Schema and Content Storage", () => {
     const body2 = await contentResp2.json();
     expect(body2.content).toBe(content2);
     expect(body2.char_count).toBe(content2.length);
+  });
+});
+
+test.describe("Data Foundation - Backfill", () => {
+  let backfillClient: ApiClient & { dispose: () => Promise<void> };
+
+  test.beforeAll(async () => {
+    backfillClient = await ApiClient.create();
+  });
+
+  test.afterAll(async () => {
+    await backfillClient.dispose();
+  });
+
+  test("backfill endpoint returns valid stats shape", async () => {
+    const resp = await backfillClient.backfillContent();
+    expect(resp.ok()).toBeTruthy();
+    const body = await resp.json();
+    expect(typeof body.success).toBe("number");
+    expect(typeof body.failed).toBe("number");
+    expect(typeof body.skipped).toBe("number");
+    expect(typeof body.total).toBe("number");
+    expect(body.success).toBeGreaterThanOrEqual(0);
+    expect(body.failed).toBeGreaterThanOrEqual(0);
+    expect(body.skipped).toBeGreaterThanOrEqual(0);
+    expect(body.total).toBeGreaterThanOrEqual(0);
+  });
+
+  test("backfill is idempotent", async () => {
+    // First call
+    const resp1 = await backfillClient.backfillContent();
+    expect(resp1.ok()).toBeTruthy();
+    const body1 = await resp1.json();
+
+    // Second call should report success=0 (nothing new to backfill)
+    const resp2 = await backfillClient.backfillContent();
+    expect(resp2.ok()).toBeTruthy();
+    const body2 = await resp2.json();
+    expect(body2.success).toBe(0);
+    expect(body2.total).toBe(0);
   });
 });
