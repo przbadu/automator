@@ -27,7 +27,7 @@ export function ThreadList({
         </Button>
       </div>
       <Separator />
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-hidden">
         <div className="p-2 space-y-1">
           {threads.map((thread) => (
             <div

@@ -27,12 +27,12 @@ function MetadataDisplay({ metadata }: { metadata: Record<string, unknown> }) {
     <div className="mt-1.5">
       <div className="flex items-center gap-1.5 flex-wrap">
         {docType && (
-          <span className="inline-flex items-center rounded-full bg-indigo-100 text-indigo-700 px-2 py-0.5 text-[10px] font-medium">
+          <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-medium">
             <span className="opacity-60 mr-0.5">Type:</span> {docType}
           </span>
         )}
         {language && (
-          <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-600 px-1.5 py-0.5 text-[10px] font-medium uppercase">
+          <span className="inline-flex items-center rounded-full bg-muted text-muted-foreground px-1.5 py-0.5 text-[10px] font-medium uppercase">
             <span className="opacity-60 mr-0.5 normal-case">Lang:</span> {language}
           </span>
         )}
@@ -42,7 +42,7 @@ function MetadataDisplay({ metadata }: { metadata: Record<string, unknown> }) {
             {topics.slice(0, 3).map((topic) => (
               <span
                 key={topic}
-                className="inline-flex items-center rounded-full bg-sky-50 text-sky-700 px-1.5 py-0.5 text-[10px]"
+                className="inline-flex items-center rounded-full bg-accent text-accent-foreground px-1.5 py-0.5 text-[10px]"
               >
                 {topic}
               </span>

@@ -13,7 +13,9 @@ interface AppSidebarProps {
 export function AppSidebar({ user, onLogout, onOpenSettings, children }: AppSidebarProps) {
   return (
     <div className="w-64 border-r flex flex-col shrink-0 h-full overflow-hidden bg-sidebar">
-      {children}
+      <div className="flex-1 overflow-hidden min-h-0">
+        {children}
+      </div>
       <Separator />
       <div className="p-3 flex items-center gap-2 shrink-0 min-w-0">
         <button
