@@ -113,8 +113,27 @@ export interface Document {
   error_message: string | null
   content_hash: string | null
   metadata: Record<string, unknown> | null
+  folder_id: string | null
   created_at: string
   updated_at: string
+}
+
+export interface Folder {
+  id: string
+  user_id: string
+  name: string
+  parent_id: string | null
+  path: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FolderTreeNode {
+  id: string
+  name: string
+  path: string
+  children: FolderTreeNode[]
+  document_count: number
 }
 
 export type MetadataFieldType = "string" | "number" | "date" | "boolean" | "list[string]"
