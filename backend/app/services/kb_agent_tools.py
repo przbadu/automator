@@ -16,6 +16,9 @@ from app.database import get_chroma_collection
 
 logger = logging.getLogger(__name__)
 
+# Maximum characters to collect from document analysis sub-agent
+_ANALYZE_DOC_MAX_CHARS = 4000
+
 # --- Tool definitions (OpenAI function-calling format) ---
 
 _KB_TOOLS_OPENAI = [
@@ -569,3 +572,67 @@ async def execute_kb_semantic_search(
     )
 
     return "\n\n".join(lines)
+
+
+@observe(name="kb_agent_tool_analyze_document")
+async def execute_analyze_document(
+    document_id: str,
+    question: str,
+    user_id: str,
+    db: aiosqlite.Connection,
+    client=None,
+    model: str | None = None,
+    provider: str | None = None,
+) -> str:
+    """Delegate deep analysis to the document analysis sub-agent and collect output.
+
+    This is a meta-tool: the explorer sub-agent calls this to spawn
+    the existing document analysis sub-agent for a single document.
+    Output is collected (not streamed) and truncated to _ANALYZE_DOC_MAX_CHARS.
+    """
+    # Look up filename for the document
+    cursor = await db.execute(
+        "SELECT filename FROM documents WHERE id = ? AND user_id = ?",
+        (document_id, user_id),
+    )
+    row = await cursor.fetchone()
+    if not row:
+        return f"Document not found (id: {document_id}). Use kb_glob or kb_ls to find documents."
+
+    filename = row[0]
+
+    # Import here to avoid circular import (sub_agent_service -> kb_agent_tools -> sub_agent_service)
+    from app.services.sub_agent_service import run_sub_agent
+
+    result_parts: list[str] = []
+    async for event in run_sub_agent(
+        user_message=question,
+        user_id=user_id,
+        chat_history=[],
+        document_id=document_id,
+        document_filename=filename,
+        client=client,
+        model=model,
+        provider=provider,
+        db=db,
+    ):
+        if event["type"] == "delta":
+            content = event.get("content", "")
+            result_parts.append(content)
+
+    result = "".join(result_parts)
+
+    # Truncate if too long
+    if len(result) > _ANALYZE_DOC_MAX_CHARS:
+        result = result[:_ANALYZE_DOC_MAX_CHARS] + "\n... (truncated)"
+
+    get_client().update_current_span(
+        metadata={
+            "document_id": document_id,
+            "filename": filename,
+            "question": question,
+            "result_length": len(result),
+        }
+    )
+
+    return result if result.strip() else "Document analysis returned no content."

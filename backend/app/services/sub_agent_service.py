@@ -343,7 +343,10 @@ async def _run_openai_loop(
                 "args": args,
             }
 
-            result = await execute_tool(tool_name, args, user_id, db)
+            result = await execute_tool(
+                tool_name, args, user_id, db,
+                client=client, model=model,
+            )
 
             yield {
                 "type": "sub_agent_tool_result",
@@ -459,7 +462,10 @@ async def _run_anthropic_loop(
                     "args": args,
                 }
 
-                result = await execute_tool(tool_name, args, user_id, db)
+                result = await execute_tool(
+                    tool_name, args, user_id, db,
+                    client=client, model=model, provider="anthropic",
+                )
 
                 yield {
                     "type": "sub_agent_tool_result",

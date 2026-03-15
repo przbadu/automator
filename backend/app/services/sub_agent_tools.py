@@ -369,6 +369,9 @@ async def execute_tool(
     arguments: dict,
     user_id: str,
     db: aiosqlite.Connection,
+    client=None,
+    model: str | None = None,
+    provider: str | None = None,
 ) -> str:
     """Execute a sub-agent tool by name and return the result as a string."""
     if tool_name == "read_document_chunks":
@@ -446,6 +449,15 @@ async def execute_tool(
             top_k=arguments.get("top_k", 5),
         )
     elif tool_name == "analyze_document":
-        return "analyze_document tool not available in this context"
+        from app.services.kb_agent_tools import execute_analyze_document
+        return await execute_analyze_document(
+            document_id=arguments["document_id"],
+            question=arguments["question"],
+            user_id=user_id,
+            db=db,
+            client=client,
+            model=model,
+            provider=provider,
+        )
     else:
         return f"Unknown tool: {tool_name}"
