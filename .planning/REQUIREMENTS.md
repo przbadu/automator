@@ -43,8 +43,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Ingestion Interface
 
-- [ ] **UI-01**: Ingestion interface displays folder tree with navigable hierarchy (left sidebar)
-- [ ] **UI-02**: User can create, rename, and delete folders via UI with confirmation dialogs
+- [x] **UI-01**: Ingestion interface displays folder tree with navigable hierarchy (left sidebar)
+- [x] **UI-02**: User can create, rename, and delete folders via UI with confirmation dialogs
 - [ ] **UI-03**: File upload targets the currently selected folder via drag-drop
 - [ ] **UI-04**: User can move files between folders via drag-drop or context menu
 - [ ] **UI-05**: User can move folders with contents to a different parent
@@ -120,8 +120,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AGENT-02 | Phase 4 | Pending |
 | AGENT-03 | Phase 4 | Pending |
 | AGENT-04 | Phase 4 | Pending |
-| UI-01 | Phase 5 | Pending |
-| UI-02 | Phase 5 | Pending |
+| UI-01 | Phase 5 | Complete |
+| UI-02 | Phase 5 | Complete |
 | UI-03 | Phase 5 | Pending |
 | UI-04 | Phase 5 | Pending |
 | UI-05 | Phase 5 | Pending |

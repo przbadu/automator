@@ -94,7 +94,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Folder tree sidebar with expand/collapse, folder CRUD dialogs (create/rename/delete), two-panel DocumentsLayout
+- [x] 05-01-PLAN.md — Folder tree sidebar with expand/collapse, folder CRUD dialogs (create/rename/delete), two-panel DocumentsLayout
 - [ ] 05-02-PLAN.md — Upload-to-folder targeting, document move via context menu, folder move via context menu, human verification
 - [ ] 05-03-PLAN.md — Drag-drop support with @dnd-kit/react for document moves, folder moves, and drop target highlighting
 
@@ -110,4 +110,4 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 | 2. Folder Operations API | 2/2 | Complete | 2026-03-15 |
 | 3. KB Exploration Tools | 2/2 | Complete | 2026-03-15 |
 | 4. Agent Integration | 0/0 | Not started | - |
-| 5. Folder Management UI | 0/3 | Not started | - |
+| 5. Folder Management UI | 1/3 | In progress | - |
