@@ -2,10 +2,19 @@ import { useState } from "react"
 import type { Document } from "@/types"
 import { DocumentStatusBadge } from "./DocumentStatusBadge"
 import { Button } from "@/components/ui/button"
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "@/components/ui/context-menu"
+import { FolderInput, Trash2 } from "lucide-react"
 
 interface Props {
   documents: Document[]
   onDelete: (id: string) => void
+  onMoveDocument?: (docId: string, docName: string) => void
 }
 
 function formatSize(bytes: number): string {
@@ -82,7 +91,7 @@ function MetadataDisplay({ metadata }: { metadata: Record<string, unknown> }) {
   )
 }
 
-export function DocumentList({ documents, onDelete }: Props) {
+export function DocumentList({ documents, onDelete, onMoveDocument }: Props) {
   if (documents.length === 0) {
     return (
       <div className="p-8 text-center text-sm text-muted-foreground">
@@ -94,43 +103,57 @@ export function DocumentList({ documents, onDelete }: Props) {
   return (
     <div className="divide-y">
       {documents.map((doc) => (
-        <div
-          key={doc.id}
-          className="flex items-start justify-between px-4 py-3 hover:bg-muted/50"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium truncate">{doc.filename}</span>
-              <DocumentStatusBadge status={doc.status} />
-            </div>
-            <div className="flex items-center gap-3 mt-0.5">
-              <span className="text-xs text-muted-foreground">
-                {formatSize(doc.file_size)}
-              </span>
-              {doc.status === "completed" && (
-                <span className="text-xs text-muted-foreground">
-                  {doc.chunk_count} chunks
-                </span>
-              )}
-              {doc.status === "failed" && doc.error_message && (
-                <span className="text-xs text-red-500 truncate max-w-[200px]" title={doc.error_message}>
-                  {doc.error_message}
-                </span>
-              )}
-            </div>
-            {doc.metadata && doc.status === "completed" && (
-              <MetadataDisplay metadata={doc.metadata} />
+        <ContextMenu key={doc.id}>
+          <ContextMenuTrigger className="flex items-start justify-between px-4 py-3 hover:bg-muted/50 w-full">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate">{doc.filename}</span>
+                  <DocumentStatusBadge status={doc.status} />
+                </div>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <span className="text-xs text-muted-foreground">
+                    {formatSize(doc.file_size)}
+                  </span>
+                  {doc.status === "completed" && (
+                    <span className="text-xs text-muted-foreground">
+                      {doc.chunk_count} chunks
+                    </span>
+                  )}
+                  {doc.status === "failed" && doc.error_message && (
+                    <span className="text-xs text-red-500 truncate max-w-[200px]" title={doc.error_message}>
+                      {doc.error_message}
+                    </span>
+                  )}
+                </div>
+                {doc.metadata && doc.status === "completed" && (
+                  <MetadataDisplay metadata={doc.metadata} />
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive shrink-0 ml-2"
+                onClick={() => onDelete(doc.id)}
+              >
+                ×
+              </Button>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            {onMoveDocument && (
+              <>
+                <ContextMenuItem onClick={() => onMoveDocument(doc.id, doc.filename)}>
+                  <FolderInput className="size-4" />
+                  Move to Folder...
+                </ContextMenuItem>
+                <ContextMenuSeparator />
+              </>
             )}
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground hover:text-destructive shrink-0 ml-2"
-            onClick={() => onDelete(doc.id)}
-          >
-            ×
-          </Button>
-        </div>
+            <ContextMenuItem variant="destructive" onClick={() => onDelete(doc.id)}>
+              <Trash2 className="size-4" />
+              Delete
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
       ))}
     </div>
   )

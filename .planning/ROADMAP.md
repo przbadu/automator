@@ -83,7 +83,7 @@ Plans:
 - [ ] 04-02: TBD
 
 ### Phase 5: Folder Management UI
-**Goal**: Users can visually organize their knowledge base through a folder tree interface with drag-drop support
+**Goal**: Users can visually organize their knowledge base through a folder tree interface with drag-drop support and context menu operations
 **Depends on**: Phase 2
 **Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05
 **Success Criteria** (what must be TRUE):
@@ -91,11 +91,12 @@ Plans:
   2. User can create, rename, and delete folders through the UI with confirmation dialogs for destructive actions
   3. User can upload files to the currently selected folder via drag-drop and the file appears in that folder after ingestion
   4. User can move files between folders and move folders with their contents to a different parent via drag-drop or context menu
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [x] 05-01-PLAN.md — Folder tree sidebar with expand/collapse, folder CRUD dialogs (create/rename/delete), two-panel DocumentsLayout
+- [ ] 05-02-PLAN.md — Upload-to-folder targeting, document move via context menu, folder move via context menu, human verification
+- [ ] 05-03-PLAN.md — Drag-drop support with @dnd-kit/react for document moves, folder moves, and drop target highlighting
 
 ## Progress
 
@@ -108,5 +109,5 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 | 1. Data Foundation | 2/2 | Complete | 2026-03-15 |
 | 2. Folder Operations API | 2/2 | Complete | 2026-03-15 |
 | 3. KB Exploration Tools | 2/2 | Complete | 2026-03-15 |
-| 4. Agent Integration | 2/1 | Complete   | 2026-03-15 |
-| 5. Folder Management UI | 0/0 | Not started | - |
+| 4. Agent Integration | 2/2 | Complete | 2026-03-15 |
+| 5. Folder Management UI | 1/3 | In progress | - |

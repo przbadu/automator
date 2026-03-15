@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { FolderOpen } from "lucide-react"
 import type { UploadResult } from "@/types"
 
 interface Props {
   onUpload: (file: File) => Promise<UploadResult>
   uploading: boolean
+  folderId?: string | null
+  folderName?: string | null
 }
 
 const variantStyles = {
@@ -19,7 +22,7 @@ interface UploadMessage {
   variant: "success" | "info" | "warning" | "error"
 }
 
-export function DocumentUpload({ onUpload, uploading }: Props) {
+export function DocumentUpload({ onUpload, uploading, folderId, folderName }: Props) {
   const [dragOver, setDragOver] = useState(false)
   const [messages, setMessages] = useState<UploadMessage[]>([])
   const [uploadingCount, setUploadingCount] = useState(0)
@@ -126,6 +129,14 @@ export function DocumentUpload({ onUpload, uploading }: Props) {
           onChange={handleChange}
         />
       </div>
+      {folderId && folderName && (
+        <div className="mt-2 flex items-center gap-1.5 px-1">
+          <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-2.5 py-0.5 text-xs text-muted-foreground">
+            <FolderOpen className="size-3" />
+            Uploading to: {folderName}
+          </span>
+        </div>
+      )}
       {messages.length > 0 && (
         <div className="mt-2 space-y-1">
           {messages.map((msg, i) => (

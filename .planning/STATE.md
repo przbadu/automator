@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-15T11:01:35.305Z"
-last_activity: 2026-03-15 -- Completed 04-02-PLAN.md (Explorer sub-agent and chat integration)
+status: in-progress
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-15T11:11:04Z"
+last_activity: 2026-03-15 -- Completed 05-01-PLAN.md (Folder tree UI with CRUD dialogs)
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 7
-  completed_plans: 8
-  percent: 100
+  completed_plans: 9
+  percent: 80
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-15)
 
 **Core value:** The agent can explore the knowledge base the same way Claude Code explores codebases
-**Current focus:** Phase 4: Agent Integration
+**Current focus:** Phase 5: Folder Management UI
 
 ## Current Position
 
-Phase: 4 of 5 (Agent Integration)
-Plan: 2 of 2 in current phase
-Status: Executing
-Last activity: 2026-03-15 -- Completed 04-02-PLAN.md (Explorer sub-agent and chat integration)
+Phase: 5 of 5 (Folder Management UI)
+Plan: 1 of 3 in current phase
+Status: Completed 05-01
+Last activity: 2026-03-15 -- Completed 05-01-PLAN.md (Folder tree UI with CRUD dialogs)
 
-Progress: [██████████] 100%
+Progress: [████████░░] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 5min
-- Total execution time: 0.5 hours
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
@@ -46,9 +46,10 @@ Progress: [██████████] 100%
 | 01-data-foundation | 2 | 16min | 8min |
 | 02-folder-operations-api | 2 | 9min | 4.5min |
 | 03-kb-exploration-tools | 2 | 6min | 3min |
+| 05-folder-management-ui | 1 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (4min), 02-01 (7min), 02-02 (2min), 03-01 (4min), 03-02 (2min)
+- Last 5 plans: 02-01 (7min), 02-02 (2min), 03-01 (4min), 03-02 (2min), 05-01 (4min)
 - Trend: Accelerating
 
 *Updated after each plan completion*
@@ -82,6 +83,9 @@ Recent decisions affecting current work:
 - [Phase 04]: Agent grep limited to max_matches=10 for LLM context efficiency
 - [Phase 04]: Explorer is a mode in sub_agent_service.py reusing existing loops, not a separate service
 - [Phase 04]: analyze_document collects output synchronously with 4000-char limit for context efficiency
+- [05-01]: Used discriminated union for dialog state management (create/rename/delete/closed)
+- [05-01]: Reused CreateFolderDialog for both create and rename via initialName prop
+- [05-01]: Chevron click stops propagation to toggle expand without changing selection
 
 ### Pending Todos
 
@@ -89,10 +93,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 5]: React tree component -- evaluate shadcn/ui availability or build custom recursive component
+- [Phase 5]: RESOLVED -- Built custom recursive FolderTreeItem component with shadcn context-menu
 
 ## Session Continuity
 
-Last session: 2026-03-15T10:58:20.998Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-15T11:11:04Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
