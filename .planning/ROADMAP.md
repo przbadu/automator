@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Schema, content storage, ingestion pipeline modification, and FTS5 indexing (completed 2026-03-15)
 - [ ] **Phase 2: Folder Operations API** - REST API for folder CRUD and document management within folders
-- [ ] **Phase 3: KB Exploration Tools** - Five exploration tools (ls, tree, grep, glob, read) with user scoping
+- [x] **Phase 3: KB Exploration Tools** - Five exploration tools (ls, tree, grep, glob, read) with user scoping (completed 2026-03-15)
 - [ ] **Phase 4: Agent Integration** - Tool registration, intent routing, and explorer sub-agent
 - [ ] **Phase 5: Folder Management UI** - Folder tree panel, CRUD dialogs, upload-to-folder, and drag-drop operations
 
@@ -107,6 +107,6 @@ Note: Phases 2 and 3 both depend only on Phase 1 and could execute in parallel.
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 2/2 | Complete   | 2026-03-15 |
 | 2. Folder Operations API | 0/0 | Not started | - |
-| 3. KB Exploration Tools | 0/0 | Not started | - |
+| 3. KB Exploration Tools | 2/2 | Complete   | 2026-03-15 |
 | 4. Agent Integration | 0/0 | Not started | - |
 | 5. Folder Management UI | 0/0 | Not started | - |
