@@ -24,14 +24,14 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### KB Exploration Tools
 
-- [ ] **TOOL-01**: Agent can use `ls(path)` to list files and subfolders in a folder
-- [ ] **TOOL-02**: Agent can use `tree(path, depth?, limit?)` to get hierarchical structure with depth limit (default 3) and truncation
-- [ ] **TOOL-03**: Agent can use `grep(pattern, path?, case_insensitive?)` to regex search extracted markdown, returns matching document names with line previews
-- [ ] **TOOL-04**: Agent can use `glob(pattern)` to match filenames by pattern (e.g., `*.pdf`, `reports/**/*`)
-- [ ] **TOOL-05**: Agent can use `read(path)` to read full document markdown content
-- [ ] **TOOL-06**: Agent can use `read(path, offset, limit)` to read specific line range with line numbers
+- [x] **TOOL-01**: Agent can use `ls(path)` to list files and subfolders in a folder
+- [x] **TOOL-02**: Agent can use `tree(path, depth?, limit?)` to get hierarchical structure with depth limit (default 3) and truncation
+- [x] **TOOL-03**: Agent can use `grep(pattern, path?, case_insensitive?)` to regex search extracted markdown, returns matching document names with line previews
+- [x] **TOOL-04**: Agent can use `glob(pattern)` to match filenames by pattern (e.g., `*.pdf`, `reports/**/*`)
+- [x] **TOOL-05**: Agent can use `read(path)` to read full document markdown content
+- [x] **TOOL-06**: Agent can use `read(path, offset, limit)` to read specific line range with line numbers
 - [x] **TOOL-07**: SQLite FTS5 virtual table indexed on extracted markdown for fast keyword search in grep
-- [ ] **TOOL-08**: All tools enforce user_id scoping — users only see their own content
+- [x] **TOOL-08**: All tools enforce user_id scoping — users only see their own content
 - [ ] **TOOL-09**: LLM automatically selects exploration tools based on user's question
 
 ### Explorer Sub-Agent
@@ -107,14 +107,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DOC-02 | Phase 2 | Pending |
 | DOC-03 | Phase 1 | Complete |
 | DOC-04 | Phase 1 | Complete |
-| TOOL-01 | Phase 3 | Pending |
-| TOOL-02 | Phase 3 | Pending |
-| TOOL-03 | Phase 3 | Pending |
-| TOOL-04 | Phase 3 | Pending |
-| TOOL-05 | Phase 3 | Pending |
-| TOOL-06 | Phase 3 | Pending |
+| TOOL-01 | Phase 3 | Complete |
+| TOOL-02 | Phase 3 | Complete |
+| TOOL-03 | Phase 3 | Complete |
+| TOOL-04 | Phase 3 | Complete |
+| TOOL-05 | Phase 3 | Complete |
+| TOOL-06 | Phase 3 | Complete |
 | TOOL-07 | Phase 1 | Complete |
-| TOOL-08 | Phase 3 | Pending |
+| TOOL-08 | Phase 3 | Complete |
 | TOOL-09 | Phase 4 | Pending |
 | AGENT-01 | Phase 4 | Pending |
 | AGENT-02 | Phase 4 | Pending |
