@@ -316,6 +316,277 @@ test.describe("Folders API", () => {
   });
 });
 
+test.describe("Folders API - Upload to Folder (DOC-01)", () => {
+  let client: ApiClient & { dispose: () => Promise<void> };
+  const createdFolderIds: string[] = [];
+  const createdDocIds: string[] = [];
+
+  test.beforeAll(async () => {
+    client = await ApiClient.create();
+  });
+
+  test.afterAll(async () => {
+    for (const id of createdDocIds) {
+      try {
+        await client.deleteDocument(id);
+      } catch {
+        // Ignore
+      }
+    }
+    for (const id of createdFolderIds.reverse()) {
+      try {
+        await client.deleteFolder(id);
+      } catch {
+        // Ignore
+      }
+    }
+    await client.dispose();
+  });
+
+  test("Upload document with folder_id associates document with folder", async () => {
+    const folderResp = await client.createFolder(`upload-folder-${Date.now()}`);
+    const folder = await folderResp.json();
+    createdFolderIds.push(folder.id);
+
+    const uploadResp = await client.uploadDocument(
+      "folder-doc.txt",
+      "Test document content for folder upload testing.",
+      "text/plain",
+      folder.id
+    );
+    expect(uploadResp.status()).toBe(201);
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.folder_id).toBe(folder.id);
+
+    // Verify document appears in folder's document list
+    const docsResp = await client.getFolderDocuments(folder.id);
+    expect(docsResp.status()).toBe(200);
+    const body = await docsResp.json();
+    const found = body.documents.find((d: { id: string }) => d.id === doc.id);
+    expect(found).toBeDefined();
+  });
+
+  test("Upload document without folder_id remains unfiled", async () => {
+    const uploadResp = await client.uploadDocument(
+      "unfiled-doc.txt",
+      "Unfiled document content."
+    );
+    expect(uploadResp.status()).toBe(201);
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.folder_id).toBeNull();
+  });
+
+  test("Upload with nonexistent folder_id returns 404", async () => {
+    const uploadResp = await client.uploadDocument(
+      "bad-folder-doc.txt",
+      "This should fail.",
+      "text/plain",
+      "00000000-0000-0000-0000-000000000000"
+    );
+    expect(uploadResp.status()).toBe(404);
+  });
+});
+
+test.describe("Folders API - Move Document (DOC-02)", () => {
+  let client: ApiClient & { dispose: () => Promise<void> };
+  const createdFolderIds: string[] = [];
+  const createdDocIds: string[] = [];
+
+  test.beforeAll(async () => {
+    client = await ApiClient.create();
+  });
+
+  test.afterAll(async () => {
+    for (const id of createdDocIds) {
+      try {
+        await client.deleteDocument(id);
+      } catch {
+        // Ignore
+      }
+    }
+    for (const id of createdFolderIds.reverse()) {
+      try {
+        await client.deleteFolder(id);
+      } catch {
+        // Ignore
+      }
+    }
+    await client.dispose();
+  });
+
+  test("Move document to a folder", async () => {
+    // Upload unfiled document
+    const uploadResp = await client.uploadDocument(
+      "move-to-folder.txt",
+      "Document to move into a folder."
+    );
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.folder_id).toBeNull();
+
+    // Create folder
+    const folderResp = await client.createFolder(`move-target-${Date.now()}`);
+    const folder = await folderResp.json();
+    createdFolderIds.push(folder.id);
+
+    // Move document to folder
+    const moveResp = await client.moveDocument(doc.id, folder.id);
+    expect(moveResp.status()).toBe(200);
+    const moved = await moveResp.json();
+    expect(moved.folder_id).toBe(folder.id);
+
+    // Verify document is listed in folder
+    const docsResp = await client.getFolderDocuments(folder.id);
+    const body = await docsResp.json();
+    const found = body.documents.find((d: { id: string }) => d.id === doc.id);
+    expect(found).toBeDefined();
+  });
+
+  test("Move document to unfiled (null folder_id)", async () => {
+    // Create folder and upload document to it
+    const folderResp = await client.createFolder(`unfiled-src-${Date.now()}`);
+    const folder = await folderResp.json();
+    createdFolderIds.push(folder.id);
+
+    const uploadResp = await client.uploadDocument(
+      "move-to-unfiled.txt",
+      "Document to move to unfiled.",
+      "text/plain",
+      folder.id
+    );
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.folder_id).toBe(folder.id);
+
+    // Move to unfiled
+    const moveResp = await client.moveDocument(doc.id, null);
+    expect(moveResp.status()).toBe(200);
+    const moved = await moveResp.json();
+    expect(moved.folder_id).toBeNull();
+  });
+
+  test("Move document to different folder", async () => {
+    // Create two folders
+    const folderAResp = await client.createFolder(`folder-a-${Date.now()}`);
+    const folderA = await folderAResp.json();
+    createdFolderIds.push(folderA.id);
+
+    const folderBResp = await client.createFolder(`folder-b-${Date.now()}`);
+    const folderB = await folderBResp.json();
+    createdFolderIds.push(folderB.id);
+
+    // Upload to folder A
+    const uploadResp = await client.uploadDocument(
+      "move-between.txt",
+      "Document to move between folders.",
+      "text/plain",
+      folderA.id
+    );
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+    expect(doc.folder_id).toBe(folderA.id);
+
+    // Move to folder B
+    const moveResp = await client.moveDocument(doc.id, folderB.id);
+    expect(moveResp.status()).toBe(200);
+    const moved = await moveResp.json();
+    expect(moved.folder_id).toBe(folderB.id);
+  });
+
+  test("Move nonexistent document returns 404", async () => {
+    const moveResp = await client.moveDocument(
+      "00000000-0000-0000-0000-000000000000",
+      null
+    );
+    expect(moveResp.status()).toBe(404);
+  });
+
+  test("Move document to nonexistent folder returns 404", async () => {
+    const uploadResp = await client.uploadDocument(
+      "move-bad-folder.txt",
+      "Document for bad folder move."
+    );
+    const doc = await uploadResp.json();
+    createdDocIds.push(doc.id);
+
+    const moveResp = await client.moveDocument(
+      doc.id,
+      "00000000-0000-0000-0000-000000000000"
+    );
+    expect(moveResp.status()).toBe(404);
+  });
+});
+
+test.describe("Folders API - Move Document User Isolation", () => {
+  let client1: ApiClient & { dispose: () => Promise<void> };
+  let client2: ApiClient & { dispose: () => Promise<void> };
+  const cleanupDocIds: string[] = [];
+  const cleanupFolderIds1: string[] = [];
+  const cleanupFolderIds2: string[] = [];
+
+  test.beforeAll(async () => {
+    client1 = await ApiClient.create();
+
+    // Create a second user
+    const email2 = uniqueEmail();
+    const password2 = "password123";
+    const ctx2 = await (await import("@playwright/test")).request.newContext();
+    await ctx2.post(`${BACKEND_URL}/auth/signup`, {
+      data: { email: email2, password: password2 },
+    });
+    await ctx2.dispose();
+
+    client2 = await ApiClient.create(email2, password2);
+  });
+
+  test.afterAll(async () => {
+    for (const id of cleanupDocIds) {
+      try {
+        await client1.deleteDocument(id);
+      } catch {
+        // Ignore
+      }
+    }
+    for (const id of cleanupFolderIds1.reverse()) {
+      try {
+        await client1.deleteFolder(id);
+      } catch {
+        // Ignore
+      }
+    }
+    for (const id of cleanupFolderIds2.reverse()) {
+      try {
+        await client2.deleteFolder(id);
+      } catch {
+        // Ignore
+      }
+    }
+    await client1.dispose();
+    await client2.dispose();
+  });
+
+  test("Cannot move document to another user's folder", async () => {
+    // User1 uploads a document
+    const uploadResp = await client1.uploadDocument(
+      "user1-doc.txt",
+      "User1 document for cross-user move test."
+    );
+    const doc = await uploadResp.json();
+    cleanupDocIds.push(doc.id);
+
+    // User2 creates a folder
+    const folderResp = await client2.createFolder(`user2-folder-${Date.now()}`);
+    const folder = await folderResp.json();
+    cleanupFolderIds2.push(folder.id);
+
+    // User1 tries to move doc to User2's folder -- should get 404 (folder not found for user1)
+    const moveResp = await client1.moveDocument(doc.id, folder.id);
+    expect(moveResp.status()).toBe(404);
+  });
+});
+
 test.describe("Folders API - User Isolation", () => {
   let client1: ApiClient & { dispose: () => Promise<void> };
   let client2: ApiClient & { dispose: () => Promise<void> };

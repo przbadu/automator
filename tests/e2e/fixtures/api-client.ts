@@ -111,16 +111,20 @@ export class ApiClient {
 
   // --- Documents ---
 
-  async uploadDocument(name: string, content: string, mimeType = "text/plain") {
+  async uploadDocument(name: string, content: string, mimeType = "text/plain", folderId?: string) {
+    const multipart: Record<string, unknown> = {
+      file: {
+        name,
+        mimeType,
+        buffer: Buffer.from(content),
+      },
+    };
+    if (folderId) {
+      multipart.folder_id = folderId;
+    }
     return this.request.post(`${BACKEND_URL}/documents/upload`, {
       headers: this.headers(),
-      multipart: {
-        file: {
-          name,
-          mimeType,
-          buffer: Buffer.from(content),
-        },
-      },
+      multipart,
     });
   }
 
@@ -158,6 +162,13 @@ export class ApiClient {
   async deleteDocument(id: string) {
     return this.request.delete(`${BACKEND_URL}/documents/${id}`, {
       headers: this.headers(),
+    });
+  }
+
+  async moveDocument(documentId: string, folderId: string | null) {
+    return this.request.patch(`${BACKEND_URL}/documents/${documentId}/move`, {
+      headers: { ...this.headers(), "Content-Type": "application/json" },
+      data: { folder_id: folderId },
     });
   }
 
