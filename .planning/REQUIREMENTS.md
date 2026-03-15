@@ -9,16 +9,16 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Folder Structure
 
-- [ ] **FOLDER-01**: User can create folders with unlimited nesting depth
-- [ ] **FOLDER-02**: User can rename existing folders
-- [ ] **FOLDER-03**: User can delete folders (cascades to contents)
-- [ ] **FOLDER-04**: User can move folders to a different parent folder
+- [x] **FOLDER-01**: User can create folders with unlimited nesting depth
+- [x] **FOLDER-02**: User can rename existing folders
+- [x] **FOLDER-03**: User can delete folders (cascades to contents)
+- [x] **FOLDER-04**: User can move folders to a different parent folder
 - [x] **FOLDER-05**: Folder metadata stored in SQLite (id, name, parent_id, user_id, path) with real filesystem directories under uploads/
 
 ### Document Management
 
-- [ ] **DOC-01**: User can upload files into a specific folder
-- [ ] **DOC-02**: User can move files between folders
+- [x] **DOC-01**: User can upload files into a specific folder
+- [x] **DOC-02**: User can move files between folders
 - [x] **DOC-03**: System stores full extracted markdown in `document_content` SQLite table during ingestion
 - [x] **DOC-04**: Existing documents backfilled with full markdown content
 
@@ -98,13 +98,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOLDER-01 | Phase 2 | Pending |
-| FOLDER-02 | Phase 2 | Pending |
-| FOLDER-03 | Phase 2 | Pending |
-| FOLDER-04 | Phase 2 | Pending |
+| FOLDER-01 | Phase 2 | Complete |
+| FOLDER-02 | Phase 2 | Complete |
+| FOLDER-03 | Phase 2 | Complete |
+| FOLDER-04 | Phase 2 | Complete |
 | FOLDER-05 | Phase 1 | Complete |
-| DOC-01 | Phase 2 | Pending |
-| DOC-02 | Phase 2 | Pending |
+| DOC-01 | Phase 2 | Complete |
+| DOC-02 | Phase 2 | Complete |
 | DOC-03 | Phase 1 | Complete |
 | DOC-04 | Phase 1 | Complete |
 | TOOL-01 | Phase 3 | Complete |
